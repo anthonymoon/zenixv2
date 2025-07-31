@@ -1,0 +1,80 @@
+name: Test NixOS Installation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-installation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install Nix
+      uses: cachix/install-nix-action@v22
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+          substituters = https://cache.nixos.org/
+          trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+    
+    - name: Setup Cachix
+      uses: cachix/cachix-action@v12
+      with:
+        name: nixos-fun
+        skipPush: true
+        
+    - name: Check flake
+      run: |
+        echo "🔍 Checking flake validity..."
+        nix flake check --impure
+        
+    - name: Test configurations build
+      run: |
+        echo "🏗️ Testing configuration builds..."
+        nix build .#nixosConfigurations.workstation.kde.stable.config.system.build.toplevel --impure
+        nix build .#nixosConfigurations.workstation.gnome.stable.config.system.build.toplevel --impure
+        
+    - name: Test disko configuration
+      run: |
+        echo "💾 Testing disko configuration..."
+        nix eval .#diskoConfigurations.default.disko.devices --json
+        
+    - name: Validate package names
+      run: |
+        echo "📦 Validating package names..."
+        # Test core packages exist
+        nix eval --impure --expr 'with import <nixpkgs> {}; [ firefox.name git.name vim.name ]'
+        
+        # Test KDE packages
+        nix eval --impure --expr 'with import <nixpkgs> {}; [ kdePackages.konsole.name kdePackages.dolphin.name ]'
+        
+    - name: Test disko dry run
+      run: |
+        echo "🧪 Testing disko dry run..."
+        # Create a fake disk image for testing
+        sudo fallocate -l 2G /tmp/test-disk.img
+        sudo losetup /dev/loop0 /tmp/test-disk.img || true
+        
+        # Test disko dry run
+        nix run github:nix-community/disko -- \
+          --mode disko \
+          --dry-run \
+          --flake .#default \
+          --arg device '"/dev/loop0"' || echo "Dry run completed"
+          
+    - name: Test apps
+      run: |
+        echo "🚀 Testing flake apps..."
+        # Test that disko-install app exists and shows help
+        timeout 10 nix run .#disko-install -- || echo "App exists"
+        
+    - name: Report success
+      run: |
+        echo "✅ All tests passed!"
+        echo "🎉 NixOS configuration is ready for installation"

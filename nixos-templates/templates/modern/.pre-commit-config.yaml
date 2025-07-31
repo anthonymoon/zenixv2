@@ -1,0 +1,38 @@
+# Pre-commit configuration with parallelization enabled
+# Enable parallel execution for faster checks
+default_stages: [commit, push]
+fail_fast: false  # Run all hooks even if one fails
+minimum_pre_commit_version: '3.0.0'
+
+repos:
+  - repo: local
+    hooks:
+      # Parallel Nix formatting (using nixfmt-rfc-style for consistency)
+      - id: nixfmt-parallel
+        name: Format Nix files (parallel)
+        entry: sh -c 'echo "$@" | xargs -P $(nproc) nixfmt-rfc-style'
+        language: system
+        files: \.nix$
+        pass_filenames: true
+        
+      # Parallel syntax checking
+      - id: nix-syntax-parallel
+        name: Nix syntax check (parallel)
+        entry: sh -c 'echo "$@" | xargs -P $(nproc) -I {} sh -c "echo \"Checking {}...\"; nix-instantiate --parse {} > /dev/null"'
+        language: system
+        files: \.nix$
+        pass_filenames: true
+        
+      # Static analysis (runs on whole project, already fast)
+      - id: statix
+        name: Statix linter
+        entry: statix check
+        language: system
+        pass_filenames: false
+        
+      # Dead code detection (runs on whole project)
+      - id: deadnix
+        name: Find dead Nix code
+        entry: deadnix --fail
+        language: system
+        pass_filenames: false

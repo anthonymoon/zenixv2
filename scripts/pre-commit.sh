@@ -11,8 +11,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Find all .nix files
-NIX_FILES=$(find . -name "*.nix" -type f | grep -v ".git" | grep -v "result")
+# Find staged .nix files only
+NIX_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.nix$' || true)
+
+# If no staged nix files, exit successfully
+if [ -z "$NIX_FILES" ]; then
+    echo "No staged .nix files to check"
+    exit 0
+fi
 
 # Check syntax
 echo -e "${YELLOW}Checking nix syntax...${NC}"

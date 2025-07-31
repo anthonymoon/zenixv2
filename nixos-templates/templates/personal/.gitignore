@@ -1,0 +1,24 @@
+# Nix
+result
+result-*
+
+# Nix build
+*.drv
+
+# macOS
+.DS_Store
+
+# Editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Secrets
+*.age
+*.key
+
+# Backup files
+*.bak
+*.backup

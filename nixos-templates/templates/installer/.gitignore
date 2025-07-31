@@ -1,0 +1,18 @@
+# Nix
+result
+result-*
+.direnv/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated files
+disk-config-final.nix
+flake-install.nix
+
+# Backup files
+*.bak
+*.orig
