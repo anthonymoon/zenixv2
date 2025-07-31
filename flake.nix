@@ -203,19 +203,20 @@
       templates = {
         installer = {
           path = ./templates/installer;
-          description = "Hardware-specific installer generator";
+          description = "NixOS installer for UEFI AMD systems with NVMe";
           welcomeText = ''
-            # NixOS Hardware-Specific Installer
+            # NixOS Installer - UEFI AMD Systems
             
-            To create a hardware-specific installer:
+            This installer is preconfigured for:
+            - UEFI boot with systemd-boot
+            - AMD CPU (kvm-amd module)
+            - NVMe drive at /dev/nvme0n1
+            - ZFS root filesystem
             
-            1. Run hardware detection (as root):
-               sudo nix run nixpkgs#nixos-facter -- -o facter.json
+            To install:
+               sudo nix run .
             
-            2. Install using the generated configuration:
-               nix run .
-            
-            This will automatically configure and install based on detected hardware.
+            WARNING: This will DESTROY all data on /dev/nvme0n1!
           '';
         };
         

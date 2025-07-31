@@ -7,36 +7,17 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-facter = {
-      url = "github:nix-community/nixos-facter";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     zenixv2.url = "github:anthonymoon/zenixv2";
   };
 
-  outputs = { self, nixpkgs, disko, nixos-facter, zenixv2 }:
+  outputs = { self, nixpkgs, disko, zenixv2 }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       
-      # Generate hardware report at evaluation time
-      facterReport = builtins.fromJSON (builtins.readFile ./facter.json);
-      
-      # Extract hardware information
-      primaryDisk = 
-        let
-          disks = facterReport.hardware.storage.disks or [];
-          nvmeDisks = builtins.filter (d: nixpkgs.lib.hasPrefix "nvme" d.name) disks;
-          sataDisks = builtins.filter (d: nixpkgs.lib.hasPrefix "sd" d.name) disks;
-        in
-        if nvmeDisks != [] then
-          "/dev/${(builtins.head nvmeDisks).name}"
-        else if sataDisks != [] then
-          "/dev/${(builtins.head sataDisks).name}"
-        else
-          throw "No suitable disk found in hardware report";
-          
-      isUEFI = facterReport.boot.efi or true;
+      # Fixed configuration - UEFI only, AMD only, nvme0n1 only
+      primaryDisk = "/dev/nvme0n1";
+      isUEFI = true;
       
       # Generate disko configuration based on detected hardware
       diskoConfig = {
@@ -48,7 +29,7 @@
               content = {
                 type = "gpt";
                 partitions = {
-                  ESP = nixpkgs.lib.mkIf isUEFI {
+                  ESP = {
                     size = "512M";
                     type = "EF00";
                     content = {
@@ -57,10 +38,6 @@
                       mountpoint = "/boot";
                       mountOptions = [ "defaults" ];
                     };
-                  };
-                  boot = nixpkgs.lib.mkIf (!isUEFI) {
-                    size = "1M";
-                    type = "EF02";
                   };
                   zfs = {
                     size = "100%";
@@ -123,7 +100,6 @@
     {
       nixosConfigurations.installer = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit facterReport; };
         modules = [
           disko.nixosModules.disko
           diskoConfig
@@ -134,23 +110,16 @@
               "${zenixv2}/modules/storage/zfs"
             ];
             
-            # Hardware-specific configuration based on facter
-            boot.loader.systemd-boot.enable = isUEFI;
-            boot.loader.efi.canTouchEfiVariables = isUEFI;
-            boot.loader.grub.enable = !isUEFI;
-            boot.loader.grub.device = if isUEFI then "nodev" else primaryDisk;
+            # Fixed configuration - UEFI and AMD only
+            boot.loader.systemd-boot.enable = true;
+            boot.loader.efi.canTouchEfiVariables = true;
             
             # Set host ID for ZFS
             networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" "installer");
             networking.hostName = "nixos";
             
-            # CPU-specific modules
-            boot.kernelModules = lib.optional 
-              (lib.hasInfix "Intel" (facterReport.hardware.cpu.vendor or ""))
-              "kvm-intel" ++
-              lib.optional
-              (lib.hasInfix "AMD" (facterReport.hardware.cpu.vendor or ""))
-              "kvm-amd";
+            # AMD CPU modules
+            boot.kernelModules = [ "kvm-amd" ];
             
             # Basic packages
             environment.systemPackages = with pkgs; [
@@ -171,10 +140,11 @@
         ];
       };
       
-      # Output the detected hardware info
+      # Fixed hardware info
       hardwareInfo = {
-        inherit primaryDisk isUEFI;
-        report = facterReport;
+        primaryDisk = "/dev/nvme0n1";
+        isUEFI = true;
+        cpuType = "AMD";
       };
       
       # Installation command using disko-install
@@ -188,13 +158,12 @@
             echo "NixOS Hardware-Specific Installer"
             echo "================================="
             echo ""
-            echo "Detected configuration:"
-            echo "  Primary disk: ${primaryDisk}"
-            echo "  Boot mode: ${if isUEFI then "UEFI" else "BIOS"}"
-            echo "  CPU: ${facterReport.hardware.cpu.vendor or "Unknown"} ${facterReport.hardware.cpu.model or ""}"
-            echo "  Memory: ${toString ((facterReport.hardware.memory.total or 0) / 1073741824)}GB"
+            echo "Fixed configuration:"
+            echo "  Primary disk: /dev/nvme0n1"
+            echo "  Boot mode: UEFI"
+            echo "  CPU: AMD (kvm-amd module)"
             echo ""
-            echo "This will DESTROY all data on ${primaryDisk}!"
+            echo "This will DESTROY all data on /dev/nvme0n1!"
             echo "Press Ctrl+C to abort, or wait 5 seconds to continue..."
             sleep 5
             
@@ -202,7 +171,7 @@
             echo "Starting installation using disko-install..."
             exec ${disko.packages.${system}.disko-install}/bin/disko-install \
               --flake ".#installer" \
-              --disk main "${primaryDisk}" \
+              --disk main "/dev/nvme0n1" \
               --option substituters "https://cache.nixos.org https://nix-community.cachix.org" \
               --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           '';
