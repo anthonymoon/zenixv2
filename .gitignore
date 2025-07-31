@@ -1,0 +1,40 @@
+# Nix
+result
+result-*
+.direnv
+.envrc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Temporary
+*.tmp
+*.bak
+*.backup
+*.log
+
+# Build artifacts
+*.qcow2
+*.img
+*.iso
+
+# Secrets
+*.age
+*.key
+secrets/
+
+# Cache
+.cache/
+__pycache__/
+
+# Local configuration overrides
+local.nix
+overrides.nix

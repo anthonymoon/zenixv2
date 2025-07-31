@@ -1,0 +1,33 @@
+# Pre-commit hooks for NixOS configuration
+repos:
+  - repo: local
+    hooks:
+      - id: nix-syntax-check
+        name: Check Nix syntax
+        entry: scripts/pre-commit.sh
+        language: script
+        files: '\.nix$'
+        pass_filenames: false
+      
+      - id: nix-format-check
+        name: Check Nix formatting
+        entry: nixfmt --check
+        language: system
+        files: '\.nix$'
+        require_serial: true
+        # Will only run if nixfmt is installed
+        
+      - id: deadnix-check
+        name: Check for dead code
+        entry: deadnix --fail
+        language: system
+        files: '\.nix$'
+        # Will only run if deadnix is installed
+        
+      - id: statix-check
+        name: Lint Nix files
+        entry: statix check
+        language: system
+        files: '\.nix$'
+        pass_filenames: false
+        # Will only run if statix is installed
