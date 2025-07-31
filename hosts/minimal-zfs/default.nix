@@ -7,7 +7,7 @@
     ./hardware-configuration.nix
     ../../modules/common
     ../../modules/storage/zfs
-  ];
+  ] ++ lib.optional (builtins.pathExists ./disko.nix) ./disko.nix;
 
   # Boot loader for ZFS
   boot.loader.systemd-boot.enable = true;

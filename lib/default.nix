@@ -17,7 +17,8 @@ in
     modules = [
       # Host-specific configuration
       { networking.hostName = hostname; }
-    ] ++ modules;
+      # Add disko module if available
+    ] ++ (lib.optionals (inputs ? disko) [ inputs.disko.nixosModules.disko ]) ++ modules;
   };
 
   # Profile builder

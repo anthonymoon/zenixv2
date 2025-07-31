@@ -11,13 +11,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    # Disk management
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
     # Additional inputs - uncomment as needed:
     # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     # nixos-hardware.url = "github:NixOS/nixos-hardware";
-    # disko = {
-    #   url = "github:nix-community/disko";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
     # agenix = {
     #   url = "github:ryantm/agenix";
     #   inputs.nixpkgs.follows = "nixpkgs";
@@ -33,7 +35,7 @@
     # impermanence.url = "github:nix-community/impermanence";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
+  outputs = { self, nixpkgs, disko, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
