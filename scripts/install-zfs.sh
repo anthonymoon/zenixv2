@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installation script for NixOS with ZFS using disko
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -22,10 +22,10 @@ echo "  Disk: ${DISK}"
 echo "  Hostname: ${HOSTNAME}"
 echo "  Flake: ${FLAKE}"
 echo ""
-read -p "Continue? (yes/no) " -n 3 -r
-echo
+echo -n "Continue? (yes/no) "
+read REPLY
 
-if [[ ! $REPLY =~ ^yes$ ]]; then
+if [[ ! "$REPLY" =~ ^yes$ ]]; then
     echo "Aborting installation."
     exit 1
 fi
