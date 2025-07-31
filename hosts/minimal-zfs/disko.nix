@@ -24,7 +24,7 @@
               size = "100%";
               content = {
                 type = "zfs";
-                pool = "zroot";
+                pool = "rpool";
               };
             };
           };
@@ -32,7 +32,7 @@
       };
     };
     zpool = {
-      zroot = {
+      rpool = {
         type = "zpool";
         options = {
           ashift = "12";

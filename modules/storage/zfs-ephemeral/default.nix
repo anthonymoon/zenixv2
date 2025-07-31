@@ -8,7 +8,7 @@
   
   # Rollback root dataset on boot
   boot.initrd.postDeviceCommands = lib.mkAfter ''
-    zfs rollback -r zroot/root@blank
+    zfs rollback -r rpool/root@blank
   '';
   
   # Note: ZFS datasets should be created during installation with disko or manually

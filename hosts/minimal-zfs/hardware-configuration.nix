@@ -15,7 +15,7 @@
 
   # Filesystem will be defined by disko
   fileSystems."/" = {
-    device = "zroot/root";
+    device = "rpool/root";
     fsType = "zfs";
   };
 
