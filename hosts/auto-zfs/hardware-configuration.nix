@@ -8,6 +8,7 @@
 
   # Placeholder filesystem configuration
   # This will be replaced by disko during installation
+  # Note: zfsutil is NOT needed for legacy mountpoints
   fileSystems."/" = {
     device = "rpool/root";
     fsType = "zfs";
@@ -26,6 +27,11 @@
   fileSystems."/var" = {
     device = "rpool/var";
     fsType = "zfs";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-partlabel/disk-main-ESP";
+    fsType = "vfat";
   };
 
   # Boot configuration - will be customized based on UEFI/BIOS

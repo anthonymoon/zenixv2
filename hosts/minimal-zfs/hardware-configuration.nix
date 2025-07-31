@@ -13,8 +13,32 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Filesystems are defined by disko in disko.nix
-  # Only define filesystem settings that disko doesn't handle
+  # Filesystems for ZFS legacy mountpoints
+  # Note: zfsutil is NOT needed for legacy mountpoints
+  fileSystems."/" = {
+    device = "rpool/root";
+    fsType = "zfs";
+  };
+
+  fileSystems."/nix" = {
+    device = "rpool/nix";
+    fsType = "zfs";
+  };
+
+  fileSystems."/home" = {
+    device = "rpool/home";
+    fsType = "zfs";
+  };
+
+  fileSystems."/var" = {
+    device = "rpool/var";
+    fsType = "zfs";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-partlabel/disk-main-ESP";
+    fsType = "vfat";
+  };
 
   swapDevices = [ ];
 

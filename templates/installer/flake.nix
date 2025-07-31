@@ -110,6 +110,15 @@
               "${zenixv2}/modules/storage/zfs"
             ];
             
+            # Optimize boot configuration for AMD NVMe systems
+            boot.initrd.availableKernelModules = [ 
+              "nvme"      # NVMe driver
+              "xhci_pci"  # USB 3.0
+              "ahci"      # SATA (backup)
+              "sd_mod"    # SCSI disk
+              "zfs"       # ZFS support
+            ];
+            
             # Fixed configuration - UEFI and AMD only
             boot.loader.systemd-boot.enable = true;
             boot.loader.efi.canTouchEfiVariables = true;
@@ -118,8 +127,43 @@
             networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" "installer");
             networking.hostName = "nixos";
             
+            # Define fileSystems for ZFS legacy mountpoints
+            # Note: zfsutil is NOT needed for legacy mountpoints
+            fileSystems."/" = {
+              device = "rpool/root";
+              fsType = "zfs";
+            };
+            
+            fileSystems."/nix" = {
+              device = "rpool/nix";
+              fsType = "zfs";
+            };
+            
+            fileSystems."/home" = {
+              device = "rpool/home";
+              fsType = "zfs";
+            };
+            
+            fileSystems."/var" = {
+              device = "rpool/var";
+              fsType = "zfs";
+            };
+            
+            fileSystems."/boot" = {
+              device = "/dev/disk/by-partlabel/disk-main-ESP";
+              fsType = "vfat";
+            };
+            
             # AMD CPU modules
             boot.kernelModules = [ "kvm-amd" ];
+            boot.extraModulePackages = [ ];
+            
+            # Disable module autoloading to reduce initrd size
+            boot.initrd.includeDefaultModules = false;
+            
+            # Minimal hardware support
+            hardware.enableRedistributableFirmware = true;
+            hardware.cpu.amd.updateMicrocode = true;
             
             # Basic packages
             environment.systemPackages = with pkgs; [
