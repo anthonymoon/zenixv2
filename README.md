@@ -27,17 +27,19 @@ A modular, maintainable NixOS configuration framework that consolidates multiple
 
 ## Quick Start
 
-### Automatic Installation (Recommended)
+### Pure Nix Installation (Recommended)
 
 ```bash
-# One-command installation with hardware detection
-sudo nix run github:anthonymoon/zenixv2#install
+# Generate hardware-specific installer
+sudo nix run github:anthonymoon/zenixv2#generate-installer
 
-# This will:
-# - Detect your hardware automatically
-# - Select the best disk for installation
-# - Partition, format, and install NixOS
-# - Configure drivers based on detected hardware
+# This creates a hardware-specific installer that:
+# - Detects your hardware using nixos-facter
+# - Generates optimal disk configuration
+# - Creates a ready-to-run installer
+
+# The command will output the location of generated installer
+# Navigate there and run: nix run .
 ```
 
 ### Direct Installation
@@ -52,7 +54,20 @@ sudo nix run github:nix-community/disko/latest#disko-install -- \
   --disk main /dev/nvme0n1
 ```
 
-### Using as a Template
+### Hardware-Specific Template
+
+```bash
+# Create installer in current directory
+nix flake init -t github:anthonymoon/zenixv2#installer
+
+# Detect hardware (requires root)
+sudo nix run nixpkgs#nixos-facter -- -o facter.json
+
+# Install with detected hardware
+sudo nix run .
+```
+
+### Using Other Templates
 
 ```bash
 # Create a new NixOS configuration from template

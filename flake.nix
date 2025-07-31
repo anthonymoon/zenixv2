@@ -201,6 +201,24 @@
 
       # Templates for quick starts
       templates = {
+        installer = {
+          path = ./templates/installer;
+          description = "Hardware-specific installer generator";
+          welcomeText = ''
+            # NixOS Hardware-Specific Installer
+            
+            To create a hardware-specific installer:
+            
+            1. Run hardware detection (as root):
+               sudo nix run nixpkgs#nixos-facter -- -o facter.json
+            
+            2. Install using the generated configuration:
+               nix run .
+            
+            This will automatically configure and install based on detected hardware.
+          '';
+        };
+        
         minimal = {
           path = ./templates/minimal;
           description = "Minimal NixOS configuration";
@@ -272,9 +290,26 @@
 
       # Apps for common operations
       apps = forAllSystems (system: {
+        # Pure Nix installation workflow
         install = {
           type = "app";
-          program = "${self.packages.${system}.installer}/bin/nixos-install-unified";
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install" ''
+            #!/bin/sh
+            set -e
+            
+            echo "NixOS Pure Nix Installer"
+            echo "========================"
+            echo ""
+            echo "This installer uses a pure Nix workflow:"
+            echo "1. Detect hardware using nixos-facter"
+            echo "2. Generate hardware-specific flake from template"
+            echo "3. Use disko-install to partition, format, and install"
+            echo ""
+            
+            # First generate the installer
+            echo "Generating hardware-specific installer..."
+            exec nix run ${self}#generate-installer
+          '');
         };
         
         deploy = {
@@ -316,215 +351,62 @@
           '');
         };
         
-        # Dynamic installer using disko-install
-        install = {
+        # Pure Nix installer generator
+        generate-installer = {
           type = "app";
-          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install" ''
-            #!${nixpkgs.legacyPackages.${system}.bash}/bin/bash
-            set -euo pipefail
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "generate-installer" ''
+            #!/bin/sh
+            set -e
             
-            echo "NixOS Dynamic Installer with Hardware Detection"
-            echo "=============================================="
+            echo "NixOS Hardware-Specific Installer Generator"
+            echo "=========================================="
             echo ""
             
-            # Configuration
-            FLAKE_ATTR=''${FLAKE_ATTR:-auto-zfs}
-            
-            # Step 1: Detect hardware
-            echo "Step 1: Detecting hardware..."
-            FACTER_REPORT=$(mktemp /tmp/facter-XXXXXX.json)
-            trap "rm -f $FACTER_REPORT" EXIT
-            
-            echo "Running hardware detection (requires root)..."
+            # Check if running as root
             if [[ $EUID -ne 0 ]]; then
-              echo "This script must be run as root for hardware detection"
+              echo "Error: This command requires root access for hardware detection."
+              echo "Please run: sudo nix run ${self}#generate-installer"
               exit 1
             fi
             
-            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o "$FACTER_REPORT"
+            # Create working directory
+            WORK_DIR=$(mktemp -d -t nixos-installer-XXXXXX)
+            cd "$WORK_DIR"
             
-            # Display detected hardware
-            echo ""
-            echo "Detected Hardware:"
-            echo "=================="
-            ${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-              "CPU: \(.hardware.cpu.model // "Unknown")",
-              "Memory: \((.hardware.memory.total // 0) / 1024 / 1024 / 1024 | round)GB",
-              "Boot Mode: \(if .boot.efi then "UEFI" else "BIOS" end)",
-              "Disks:",
-              (.hardware.storage.disks[]? | "  - \(.name): \(.model // "Unknown") (\(.size // 0) / 1024 / 1024 / 1024 | round)GB)")
-            ' "$FACTER_REPORT"
-            
-            # Find primary disk
-            PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-              .hardware.storage.disks[]? |
-              select(.name | startswith("nvme")) |
-              "/dev/\(.name)" |
-              . // empty
-            ' "$FACTER_REPORT" | head -1)
-            
-            if [ -z "$PRIMARY_DISK" ]; then
-              PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-                .hardware.storage.disks[]? |
-                select(.name | startswith("sd") or startswith("vd")) |
-                "/dev/\(.name)" |
-                . // empty
-              ' "$FACTER_REPORT" | head -1)
-            fi
-            
-            if [ -z "$PRIMARY_DISK" ]; then
-              echo "ERROR: No suitable disk found for installation"
-              echo "Please specify a disk manually:"
-              echo "  DISK=/dev/nvme0n1 $0"
-              exit 1
-            fi
-            
-            # Allow override
-            DISK=''${DISK:-$PRIMARY_DISK}
-            
-            echo ""
-            echo "Installation target: $DISK"
-            echo "Configuration: $FLAKE_ATTR"
-            echo ""
-            echo "This will DESTROY all data on $DISK!"
-            echo "Press Ctrl+C to abort, or wait 10 seconds to continue..."
-            sleep 10
-            
-            # Step 2: Run disko-install
-            echo ""
-            echo "Step 2: Running disko-install..."
-            echo "This will partition, format, mount, and install NixOS"
-            
-            exec ${disko.packages.${system}.disko-install}/bin/disko-install \
-              --flake "${self}#$FLAKE_ATTR" \
-              --disk main "$DISK" \
-              --extra-files "$FACTER_REPORT" "/etc/facter.json" \
-              --option substituters "https://cache.nixos.org https://nix-community.cachix.org" \
-              --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          '');
-        };
-        
-        # Legacy auto installer (kept for compatibility)
-        install-auto = {
-          type = "app";
-          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install-auto" ''
-            #!${nixpkgs.legacyPackages.${system}.bash}/bin/bash
-            set -euo pipefail
-            
-            echo "NixOS Auto-Installer with Hardware Detection"
-            echo "==========================================="
-            
-            # Configuration
-            HOSTNAME=''${HOSTNAME:-minimal-zfs}
-            POOL_NAME=''${POOL_NAME:-rpool}
-            
-            # Step 1: Run hardware detection
             echo "Step 1: Detecting hardware..."
-            FACTER_REPORT=$(mktemp /tmp/facter-XXXXXX.json)
-            trap "rm -f $FACTER_REPORT" EXIT
+            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o facter.json
             
-            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o "$FACTER_REPORT"
-            
-            echo "Hardware detection complete. Report saved to: $FACTER_REPORT"
-            
-            # Display detected hardware
-            echo ""
-            echo "Detected Hardware:"
-            echo "=================="
-            ${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-              "CPU: \(.hardware.cpu.model // "Unknown")",
-              "Memory: \((.hardware.memory.total // 0) / 1024 / 1024 / 1024 | round)GB",
-              "Boot Mode: \(if .boot.efi then "UEFI" else "BIOS" end)",
-              "Disks:",
-              (.hardware.storage.disks[]? | "  - \(.name): \(.model // "Unknown") (\(.size // 0) / 1024 / 1024 / 1024 | round)GB)")
-            ' "$FACTER_REPORT"
-            
-            # Determine primary disk
-            PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-              .hardware.storage.disks[]? |
-              select(.name | startswith("nvme")) |
-              "/dev/\(.name)" |
-              . // empty
-            ' "$FACTER_REPORT" | head -1)
-            
-            if [ -z "$PRIMARY_DISK" ]; then
-              PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
-                .hardware.storage.disks[]? |
-                select(.name | startswith("sd")) |
-                "/dev/\(.name)" |
-                . // empty
-              ' "$FACTER_REPORT" | head -1)
-            fi
-            
-            if [ -z "$PRIMARY_DISK" ]; then
-              echo "ERROR: No suitable disk found for installation"
-              exit 1
-            fi
+            echo "Step 2: Generating installer configuration..."
+            ${nixpkgs.legacyPackages.${system}.nix}/bin/nix flake init -t ${self}#installer
             
             echo ""
-            echo "Selected disk: $PRIMARY_DISK"
+            echo "Hardware-specific installer generated!"
+            echo "Location: $WORK_DIR"
             echo ""
-            echo "This will DESTROY all data on $PRIMARY_DISK!"
-            echo "Press Ctrl+C to abort, or wait 10 seconds to continue..."
-            sleep 10
-            
-            # Step 2: Generate dynamic disko configuration
+            echo "To install NixOS:"
+            echo "  cd $WORK_DIR"
+            echo "  nix run ."
             echo ""
-            echo "Step 2: Generating disk configuration..."
-            DISKO_CONFIG=$(mktemp /tmp/disko-XXXXXX.nix)
-            trap "rm -f $FACTER_REPORT $DISKO_CONFIG" EXIT
-            
-            cat > "$DISKO_CONFIG" << 'EOF'
-            ${builtins.readFile ./lib/dynamic-disko.nix}
-            EOF
-            
-            # Step 3: Clean existing pools
-            echo ""
-            echo "Step 3: Cleaning existing configurations..."
-            ${nixpkgs.legacyPackages.${system}.zfs}/bin/zpool destroy -f "$POOL_NAME" 2>/dev/null || true
-            ${nixpkgs.legacyPackages.${system}.util-linux}/bin/wipefs -af "$PRIMARY_DISK"
-            
-            # Step 4: Run disko
-            echo ""
-            echo "Step 4: Partitioning and formatting disk..."
-            ${disko.packages.${system}.disko}/bin/disko \
-              --mode destroy,format,mount \
-              --flake ${self}#$HOSTNAME
-            
-            # Step 5: Generate hardware configuration
-            echo ""
-            echo "Step 5: Generating NixOS hardware configuration..."
-            ${nixpkgs.legacyPackages.${system}.nixos-install-tools}/bin/nixos-generate-config \
-              --root /mnt \
-              --show-hardware-config > /mnt/etc/nixos/hardware-configuration.nix
-            
-            # Step 6: Install NixOS
-            echo ""
-            echo "Step 6: Installing NixOS..."
-            ${nixpkgs.legacyPackages.${system}.nixos-install-tools}/bin/nixos-install \
-              --no-root-passwd \
-              --flake ${self}#$HOSTNAME
-            
-            echo ""
-            echo "Installation complete!"
-            echo ""
-            echo "Next steps:"
-            echo "1. Reboot into your new system"
-            echo "2. Set a password for the admin user"
-            echo "3. Configure your system as needed"
+            echo "To review the configuration:"
+            echo "  cat $WORK_DIR/flake.nix"
           '');
         };
       });
 
       # Packages
-      packages = forAllSystems (system: {
-        installer = nixpkgs.legacyPackages.${system}.writeShellScriptBin "nixos-install-unified" ''
-          ${builtins.readFile ./scripts/install.sh}
-        '';
-        
-        deployer = nixpkgs.legacyPackages.${system}.writeShellScriptBin "nixos-deploy" ''
-          ${builtins.readFile ./scripts/deploy.sh}
-        '';
-      });
+      packages = forAllSystems (system: 
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          # Pure Nix installer generator
+          installer-generator = pkgs.callPackage ./packages/installer-generator {
+            inherit nixos-facter disko;
+          };
+          
+          deployer = pkgs.writeShellScriptBin "nixos-deploy" ''
+            ${builtins.readFile ./scripts/deploy.sh}
+          '';
+        });
     };
 }

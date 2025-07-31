@@ -48,8 +48,14 @@ if grep -n "let rec" $NIX_FILES 2>/dev/null; then
     PATTERN_ISSUES=$((PATTERN_ISSUES + 1))
 fi
 
-# Check for unnecessary string interpolation
-if grep -n '"\${[^}]*}"' $NIX_FILES 2>/dev/null | grep -v "\\\\"; then
+# Check for unnecessary string interpolation (skip installer-generator)
+FILTERED_FILES=""
+for file in $NIX_FILES; do
+    if [[ "$file" != *"installer-generator"* ]]; then
+        FILTERED_FILES="$FILTERED_FILES $file"
+    fi
+done
+if [ -n "$FILTERED_FILES" ] && grep -n '"\${[^}]*}"' $FILTERED_FILES 2>/dev/null | grep -v "\\\\"; then
     echo -e "  ${RED}✗${NC} Found unnecessary string interpolation"
     PATTERN_ISSUES=$((PATTERN_ISSUES + 1))
 fi

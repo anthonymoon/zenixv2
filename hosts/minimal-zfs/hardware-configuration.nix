@@ -13,16 +13,8 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Filesystem will be defined by disko
-  fileSystems."/" = {
-    device = "rpool/root";
-    fsType = "zfs";
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-label/boot";
-    fsType = "vfat";
-  };
+  # Filesystems are defined by disko in disko.nix
+  # Only define filesystem settings that disko doesn't handle
 
   swapDevices = [ ];
 
