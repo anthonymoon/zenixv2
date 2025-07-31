@@ -27,23 +27,37 @@ A modular, maintainable NixOS configuration framework that consolidates multiple
 
 ## Quick Start
 
+### Automatic Installation (Recommended)
+
+```bash
+# One-command installation with hardware detection
+sudo nix run github:anthonymoon/zenixv2#install
+
+# This will:
+# - Detect your hardware automatically
+# - Select the best disk for installation
+# - Partition, format, and install NixOS
+# - Configure drivers based on detected hardware
+```
+
+### Direct Installation
+
+```bash
+# Install a specific configuration to a specific disk
+sudo DISK=/dev/nvme0n1 nix run github:anthonymoon/zenixv2#install-minimal-zfs
+
+# Or using disko-install directly
+sudo nix run github:nix-community/disko/latest#disko-install -- \
+  --flake github:anthonymoon/zenixv2#minimal-zfs \
+  --disk main /dev/nvme0n1
+```
+
 ### Using as a Template
 
 ```bash
 # Create a new NixOS configuration from template
 nix flake new -t github:anthonymoon/zenixv2#workstation my-nixos-config
 cd my-nixos-config
-```
-
-### Direct Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/anthonymoon/zenixv2.git
-cd zenixv2
-
-# Install a specific configuration
-sudo nixos-install --flake .#workstation
 ```
 
 ### Building Configurations

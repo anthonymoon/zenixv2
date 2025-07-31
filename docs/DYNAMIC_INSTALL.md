@@ -1,6 +1,6 @@
 # Dynamic Installation with Hardware Detection
 
-This flake supports fully dynamic installation that automatically detects your hardware and configures the system accordingly.
+This flake supports fully dynamic installation using `disko-install` that automatically detects your hardware and configures the system accordingly.
 
 ## Features
 
@@ -9,14 +9,30 @@ This flake supports fully dynamic installation that automatically detects your h
 - **UEFI/BIOS Detection**: Configures boot loader based on detected firmware
 - **ZFS Optimization**: Tunes ZFS ARC based on available memory
 - **GPU Detection**: Automatically configures graphics drivers
+- **Single Command**: Partitions, formats, mounts, and installs in one step
 
 ## Quick Start
 
-### One-Command Installation
+### Method 1: Automatic Installation with Hardware Detection
 
 ```bash
-# Run the automatic installer
-sudo nix run github:anthonymoon/zenixv2#install-auto
+# Run the dynamic installer (detects hardware and selects disk)
+sudo nix run github:anthonymoon/zenixv2#install
+
+# Or specify a configuration
+sudo FLAKE_ATTR=minimal-zfs nix run github:anthonymoon/zenixv2#install
+```
+
+### Method 2: Direct Installation (when you know your disk)
+
+```bash
+# Install minimal-zfs directly
+sudo DISK=/dev/nvme0n1 nix run github:anthonymoon/zenixv2#install-minimal-zfs
+
+# Or using disko-install directly
+sudo nix run github:nix-community/disko/latest#disko-install -- \
+  --flake github:anthonymoon/zenixv2#minimal-zfs \
+  --disk main /dev/nvme0n1
 ```
 
 This will:

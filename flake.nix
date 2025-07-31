@@ -282,6 +282,26 @@
           program = "${self.packages.${system}.deployer}/bin/nixos-deploy";
         };
         
+        # Direct disko-install for each configuration
+        install-minimal-zfs = {
+          type = "app";
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install-minimal-zfs" ''
+            #!${nixpkgs.legacyPackages.${system}.bash}/bin/bash
+            set -euo pipefail
+            
+            DISK=''${DISK:-/dev/nvme0n1}
+            
+            echo "Installing minimal-zfs to $DISK"
+            echo "This will DESTROY all data on $DISK!"
+            echo "Press Ctrl+C within 5 seconds to abort..."
+            sleep 5
+            
+            exec ${disko.packages.${system}.disko-install}/bin/disko-install \
+              --flake "${self}#minimal-zfs" \
+              --disk main "$DISK"
+          '');
+        };
+        
         # Disko formatters for each configuration
         format-minimal-zfs = {
           type = "app";
@@ -296,7 +316,95 @@
           '');
         };
         
-        # Dynamic installer with hardware detection
+        # Dynamic installer using disko-install
+        install = {
+          type = "app";
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install" ''
+            #!${nixpkgs.legacyPackages.${system}.bash}/bin/bash
+            set -euo pipefail
+            
+            echo "NixOS Dynamic Installer with Hardware Detection"
+            echo "=============================================="
+            echo ""
+            
+            # Configuration
+            FLAKE_ATTR=''${FLAKE_ATTR:-auto-zfs}
+            
+            # Step 1: Detect hardware
+            echo "Step 1: Detecting hardware..."
+            FACTER_REPORT=$(mktemp /tmp/facter-XXXXXX.json)
+            trap "rm -f $FACTER_REPORT" EXIT
+            
+            echo "Running hardware detection (requires root)..."
+            if [[ $EUID -ne 0 ]]; then
+              echo "This script must be run as root for hardware detection"
+              exit 1
+            fi
+            
+            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o "$FACTER_REPORT"
+            
+            # Display detected hardware
+            echo ""
+            echo "Detected Hardware:"
+            echo "=================="
+            ${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+              "CPU: \(.hardware.cpu.model // "Unknown")",
+              "Memory: \((.hardware.memory.total // 0) / 1024 / 1024 / 1024 | round)GB",
+              "Boot Mode: \(if .boot.efi then "UEFI" else "BIOS" end)",
+              "Disks:",
+              (.hardware.storage.disks[]? | "  - \(.name): \(.model // "Unknown") (\(.size // 0) / 1024 / 1024 / 1024 | round)GB)")
+            ' "$FACTER_REPORT"
+            
+            # Find primary disk
+            PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+              .hardware.storage.disks[]? |
+              select(.name | startswith("nvme")) |
+              "/dev/\(.name)" |
+              . // empty
+            ' "$FACTER_REPORT" | head -1)
+            
+            if [ -z "$PRIMARY_DISK" ]; then
+              PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+                .hardware.storage.disks[]? |
+                select(.name | startswith("sd") or startswith("vd")) |
+                "/dev/\(.name)" |
+                . // empty
+              ' "$FACTER_REPORT" | head -1)
+            fi
+            
+            if [ -z "$PRIMARY_DISK" ]; then
+              echo "ERROR: No suitable disk found for installation"
+              echo "Please specify a disk manually:"
+              echo "  DISK=/dev/nvme0n1 $0"
+              exit 1
+            fi
+            
+            # Allow override
+            DISK=''${DISK:-$PRIMARY_DISK}
+            
+            echo ""
+            echo "Installation target: $DISK"
+            echo "Configuration: $FLAKE_ATTR"
+            echo ""
+            echo "This will DESTROY all data on $DISK!"
+            echo "Press Ctrl+C to abort, or wait 10 seconds to continue..."
+            sleep 10
+            
+            # Step 2: Run disko-install
+            echo ""
+            echo "Step 2: Running disko-install..."
+            echo "This will partition, format, mount, and install NixOS"
+            
+            exec ${disko.packages.${system}.disko-install}/bin/disko-install \
+              --flake "${self}#$FLAKE_ATTR" \
+              --disk main "$DISK" \
+              --extra-files "$FACTER_REPORT" "/etc/facter.json" \
+              --option substituters "https://cache.nixos.org https://nix-community.cachix.org" \
+              --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          '');
+        };
+        
+        # Legacy auto installer (kept for compatibility)
         install-auto = {
           type = "app";
           program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install-auto" ''
