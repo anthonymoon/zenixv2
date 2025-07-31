@@ -25,10 +25,10 @@ echo "Starting installation..."
 
 # Partition disk
 echo "Partitioning ${DISK}..."
-parted "${DISK}" -- mklabel gpt
-parted "${DISK}" -- mkpart ESP fat32 1MB 512MB
-parted "${DISK}" -- mkpart primary 512MB 100%
-parted "${DISK}" -- set 1 esp on
+parted -s "${DISK}" -- mklabel gpt
+parted -s "${DISK}" -- mkpart ESP fat32 1MB 512MB
+parted -s "${DISK}" -- mkpart primary 512MB 100%
+parted -s "${DISK}" -- set 1 esp on
 
 # Wait for partitions
 sleep 2
