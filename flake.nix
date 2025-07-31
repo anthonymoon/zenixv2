@@ -17,16 +17,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
-    # Hardware detection
-    nixos-facter = {
-      url = "github:nix-community/nixos-facter";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    
-    nixos-facter-modules = {
-      url = "github:nix-community/nixos-facter-modules";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     
     # Additional inputs - uncomment as needed:
     # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -46,7 +36,7 @@
     # impermanence.url = "github:nix-community/impermanence";
   };
 
-  outputs = { self, nixpkgs, disko, nixos-facter, nixos-facter-modules, ... }@inputs:
+  outputs = { self, nixpkgs, disko, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
@@ -352,46 +342,42 @@
           '');
         };
         
-        # Pure Nix installer generator
-        generate-installer = {
+        # Simple deploy app for the installer template
+        deploy-installer = {
           type = "app";
-          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "generate-installer" ''
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "deploy-installer" ''
             #!/bin/sh
             set -e
             
-            echo "NixOS Hardware-Specific Installer Generator"
-            echo "=========================================="
+            echo "NixOS Installer Deployment"
+            echo "=========================="
             echo ""
+            echo "This will:"
+            echo "1. Initialize the installer template"
+            echo "2. Run the installer immediately"
+            echo ""
+            echo "Requirements:"
+            echo "- UEFI system with AMD CPU"
+            echo "- NVMe drive at /dev/nvme0n1"
+            echo ""
+            echo "WARNING: This will DESTROY all data on /dev/nvme0n1!"
+            echo "Press Ctrl+C to abort, or wait 5 seconds to continue..."
+            sleep 5
             
-            # Check if running as root
-            if [[ $EUID -ne 0 ]]; then
-              echo "Error: This command requires root access for hardware detection."
-              echo "Please run: sudo nix run ${self}#generate-installer"
-              exit 1
-            fi
+            # Create temporary directory
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
             
-            # Create working directory
-            WORK_DIR=$(mktemp -d -t nixos-installer-XXXXXX)
-            cd "$WORK_DIR"
-            
-            echo "Step 1: Detecting hardware..."
-            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o facter.json
-            
-            echo "Step 2: Generating installer configuration..."
+            echo ""
+            echo "Initializing installer..."
             ${nixpkgs.legacyPackages.${system}.nix}/bin/nix flake init -t ${self}#installer
             
             echo ""
-            echo "Hardware-specific installer generated!"
-            echo "Location: $WORK_DIR"
-            echo ""
-            echo "To install NixOS:"
-            echo "  cd $WORK_DIR"
-            echo "  nix run ."
-            echo ""
-            echo "To review the configuration:"
-            echo "  cat $WORK_DIR/flake.nix"
+            echo "Running installer..."
+            exec ${nixpkgs.legacyPackages.${system}.nix}/bin/nix run .
           '');
         };
+        
       });
 
       # Packages
@@ -400,11 +386,6 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          # Pure Nix installer generator
-          installer-generator = pkgs.callPackage ./packages/installer-generator {
-            inherit nixos-facter disko;
-          };
-          
           deployer = pkgs.writeShellScriptBin "nixos-deploy" ''
             ${builtins.readFile ./scripts/deploy.sh}
           '';
