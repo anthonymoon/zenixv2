@@ -1,6 +1,7 @@
 { inputs }:
 let
   inherit (inputs.nixpkgs) lib;
+  dynamicDisko = import ./dynamic-disko.nix { inherit lib; pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux; };
 in
 {
   # Main system builder function
@@ -162,4 +163,7 @@ in
       message = "Security mitigations should not be disabled in production";
     };
   };
+  
+  # Dynamic disko configuration generator
+  inherit (dynamicDisko) generateDiskoConfig;
 }

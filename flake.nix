@@ -17,6 +17,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    # Hardware detection
+    nixos-facter = {
+      url = "github:nix-community/nixos-facter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    nixos-facter-modules = {
+      url = "github:nix-community/nixos-facter-modules";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
     # Additional inputs - uncomment as needed:
     # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     # nixos-hardware.url = "github:NixOS/nixos-hardware";
@@ -35,7 +46,7 @@
     # impermanence.url = "github:nix-community/impermanence";
   };
 
-  outputs = { self, nixpkgs, disko, ... }@inputs:
+  outputs = { self, nixpkgs, disko, nixos-facter, nixos-facter-modules, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
@@ -87,6 +98,16 @@
             ./hosts/minimal-zfs
             ./modules/profiles/minimal
             ./modules/storage/zfs
+          ];
+        };
+        
+        # Auto-configured system with hardware detection
+        auto-zfs = lib.mkSystem {
+          hostname = "auto-zfs";
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/auto-zfs
+            ./modules/profiles/minimal
           ];
         };
         
@@ -272,6 +293,117 @@
               --flake ${self}#minimal-zfs \
               -- \
               --arg device \"''${DISK:-/dev/nvme0n1}\"
+          '');
+        };
+        
+        # Dynamic installer with hardware detection
+        install-auto = {
+          type = "app";
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "install-auto" ''
+            #!${nixpkgs.legacyPackages.${system}.bash}/bin/bash
+            set -euo pipefail
+            
+            echo "NixOS Auto-Installer with Hardware Detection"
+            echo "==========================================="
+            
+            # Configuration
+            HOSTNAME=''${HOSTNAME:-minimal-zfs}
+            POOL_NAME=''${POOL_NAME:-rpool}
+            
+            # Step 1: Run hardware detection
+            echo "Step 1: Detecting hardware..."
+            FACTER_REPORT=$(mktemp /tmp/facter-XXXXXX.json)
+            trap "rm -f $FACTER_REPORT" EXIT
+            
+            ${nixos-facter.packages.${system}.default}/bin/nixos-facter -o "$FACTER_REPORT"
+            
+            echo "Hardware detection complete. Report saved to: $FACTER_REPORT"
+            
+            # Display detected hardware
+            echo ""
+            echo "Detected Hardware:"
+            echo "=================="
+            ${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+              "CPU: \(.hardware.cpu.model // "Unknown")",
+              "Memory: \((.hardware.memory.total // 0) / 1024 / 1024 / 1024 | round)GB",
+              "Boot Mode: \(if .boot.efi then "UEFI" else "BIOS" end)",
+              "Disks:",
+              (.hardware.storage.disks[]? | "  - \(.name): \(.model // "Unknown") (\(.size // 0) / 1024 / 1024 / 1024 | round)GB)")
+            ' "$FACTER_REPORT"
+            
+            # Determine primary disk
+            PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+              .hardware.storage.disks[]? |
+              select(.name | startswith("nvme")) |
+              "/dev/\(.name)" |
+              . // empty
+            ' "$FACTER_REPORT" | head -1)
+            
+            if [ -z "$PRIMARY_DISK" ]; then
+              PRIMARY_DISK=$(${nixpkgs.legacyPackages.${system}.jq}/bin/jq -r '
+                .hardware.storage.disks[]? |
+                select(.name | startswith("sd")) |
+                "/dev/\(.name)" |
+                . // empty
+              ' "$FACTER_REPORT" | head -1)
+            fi
+            
+            if [ -z "$PRIMARY_DISK" ]; then
+              echo "ERROR: No suitable disk found for installation"
+              exit 1
+            fi
+            
+            echo ""
+            echo "Selected disk: $PRIMARY_DISK"
+            echo ""
+            echo "This will DESTROY all data on $PRIMARY_DISK!"
+            echo "Press Ctrl+C to abort, or wait 10 seconds to continue..."
+            sleep 10
+            
+            # Step 2: Generate dynamic disko configuration
+            echo ""
+            echo "Step 2: Generating disk configuration..."
+            DISKO_CONFIG=$(mktemp /tmp/disko-XXXXXX.nix)
+            trap "rm -f $FACTER_REPORT $DISKO_CONFIG" EXIT
+            
+            cat > "$DISKO_CONFIG" << 'EOF'
+            ${builtins.readFile ./lib/dynamic-disko.nix}
+            EOF
+            
+            # Step 3: Clean existing pools
+            echo ""
+            echo "Step 3: Cleaning existing configurations..."
+            ${nixpkgs.legacyPackages.${system}.zfs}/bin/zpool destroy -f "$POOL_NAME" 2>/dev/null || true
+            ${nixpkgs.legacyPackages.${system}.util-linux}/bin/wipefs -af "$PRIMARY_DISK"
+            
+            # Step 4: Run disko
+            echo ""
+            echo "Step 4: Partitioning and formatting disk..."
+            ${disko.packages.${system}.disko}/bin/disko \
+              --mode destroy,format,mount \
+              --flake ${self}#$HOSTNAME
+            
+            # Step 5: Generate hardware configuration
+            echo ""
+            echo "Step 5: Generating NixOS hardware configuration..."
+            ${nixpkgs.legacyPackages.${system}.nixos-install-tools}/bin/nixos-generate-config \
+              --root /mnt \
+              --show-hardware-config > /mnt/etc/nixos/hardware-configuration.nix
+            
+            # Step 6: Install NixOS
+            echo ""
+            echo "Step 6: Installing NixOS..."
+            ${nixpkgs.legacyPackages.${system}.nixos-install-tools}/bin/nixos-install \
+              --no-root-passwd \
+              --flake ${self}#$HOSTNAME
+            
+            echo ""
+            echo "Installation complete!"
+            echo ""
+            echo "Next steps:"
+            echo "1. Reboot into your new system"
+            echo "2. Set a password for the admin user"
+            echo "3. Configure your system as needed"
           '');
         };
       });
