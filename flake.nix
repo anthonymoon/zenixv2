@@ -224,6 +224,11 @@
         common = import ./modules/common;
         cachix = import ./modules/common/cachix.nix;
       };
+      
+      # Disko configurations
+      diskoConfigurations = {
+        minimal-zfs = import ./hosts/minimal-zfs/disko.nix;
+      };
 
       # Helper functions
       lib = {
@@ -254,6 +259,20 @@
         deploy = {
           type = "app";
           program = "${self.packages.${system}.deployer}/bin/nixos-deploy";
+        };
+        
+        # Disko formatters for each configuration
+        format-minimal-zfs = {
+          type = "app";
+          program = toString (nixpkgs.legacyPackages.${system}.writeShellScript "format-minimal-zfs" ''
+            set -e
+            echo "Formatting disk with minimal-zfs configuration..."
+            ${disko.packages.${system}.disko}/bin/disko \
+              --mode disko \
+              --flake ${self}#minimal-zfs \
+              -- \
+              --arg device \"''${DISK:-/dev/nvme0n1}\"
+          '');
         };
       });
 
