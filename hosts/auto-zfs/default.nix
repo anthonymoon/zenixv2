@@ -3,6 +3,7 @@
 
 {
   imports = [
+    ./hardware-configuration.nix
     (modulesPath + "/installer/scan/not-detected.nix")
     ../../modules/common
     ../../modules/storage/zfs

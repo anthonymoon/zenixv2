@@ -421,10 +421,23 @@ If migrating from multiple separate NixOS projects:
 
 ### Code Style
 
-- Use `nixfmt` for formatting
+- Use `nixfmt-rfc-style` for formatting (available in dev shell)
 - Follow existing module patterns
 - Document all options
 - Add tests for complex features
+
+### Development Workflow
+
+```bash
+# Enter the dev shell for all tools
+nix develop
+
+# Or run commands directly with dev shell
+nix develop -c git commit -m "your message"
+
+# Or use the helper script
+./scripts/git-commit.sh -m "your message"
+```
 
 ## License
 

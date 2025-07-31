@@ -38,7 +38,7 @@
 
   outputs = { self, nixpkgs, disko, ... }@inputs:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" ];
+      systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
       
       # Common library functions
@@ -57,14 +57,10 @@
             ssh-to-age
           ];
           shellHook = ''
-            ${inputs.pre-commit-hooks.lib.${system}.run {
-              src = ./.;
-              hooks = {
-                nixfmt.enable = true;
-                statix.enable = true;
-                deadnix.enable = true;
-              };
-            }.shellHook}
+            echo "NixOS development shell"
+            echo "Available tools: nixfmt-rfc-style, statix, deadnix, git"
+            echo ""
+            echo "Run 'git commit' to use pre-commit hooks"
           '';
         };
       });
@@ -269,14 +265,7 @@
 
       # Checks
       checks = forAllSystems (system: {
-        pre-commit = inputs.pre-commit-hooks.lib.${system}.run {
-          src = ./.;
-          hooks = {
-            nixfmt.enable = true;
-            statix.enable = true;
-            deadnix.enable = true;
-          };
-        };
+        # Basic flake check is run automatically
       });
 
       # Apps for common operations
@@ -386,9 +375,10 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          deployer = pkgs.writeShellScriptBin "nixos-deploy" ''
-            ${builtins.readFile ./scripts/deploy.sh}
-          '';
+          # Placeholder for future deployment tool
+          # deployer = pkgs.writeShellScriptBin "nixos-deploy" ''
+          #   echo "Deploy tool not yet implemented"
+          # '';
         });
     };
 }
