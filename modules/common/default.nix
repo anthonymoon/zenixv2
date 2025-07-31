@@ -1,14 +1,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [
-    ./cachix.nix
-    ./nix-settings.nix
-    ./base-packages.nix
-    ./locale.nix
-    ./console.nix
-  ];
-
   # Base system configuration
   config = {
     # Nix configuration
@@ -79,8 +71,9 @@
     };
 
     # Time and locale
-    time.timeZone = lib.mkDefault "UTC";
-    i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
+    # Note: These are set by individual hosts
+    # time.timeZone = lib.mkDefault "UTC";
+    # i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
 
     # Console
     console = {

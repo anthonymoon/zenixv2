@@ -15,15 +15,6 @@ in
       inherit inputs hostname;
     };
     modules = [
-      # Core modules always included
-      ./modules/core
-      
-      # Common configurations
-      ./modules/common
-      
-      # Hardware detection
-      ./modules/hardware/auto-detect.nix
-      
       # Host-specific configuration
       { networking.hostName = hostname; }
     ] ++ modules;
