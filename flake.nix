@@ -19,9 +19,14 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    
+    nixos-gaming = {
+      url = "github:fufexan/nix-gaming";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, omarchy-nix, home-manager, disko, ... }@inputs: {
+  outputs = { self, nixpkgs, omarchy-nix, home-manager, disko, nixos-gaming, ... }@inputs: {
     nixosConfigurations.nixie = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
@@ -36,6 +41,7 @@
         ./modules/networking/bonding
         ./modules/networking/performance
         ./modules/services/samba
+        ./modules/extras/pkgs
         
         # Omarchy modules
         omarchy-nix.nixosModules.default
