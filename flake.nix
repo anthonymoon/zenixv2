@@ -29,10 +29,6 @@
         # Hardware configuration
         ./hosts/nixie/hardware-configuration.nix
         
-        # Disko for disk management
-        disko.nixosModules.disko
-        ./hosts/nixie/disko.nix
-        
         # Common modules
         ./modules/common
         ./modules/storage/zfs
