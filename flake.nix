@@ -3,6 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     omarchy-nix = {
       url = "github:henrysipp/omarchy-nix";
@@ -30,6 +32,7 @@
     {
       self,
       nixpkgs,
+      nixos-hardware,
       omarchy-nix,
       home-manager,
       disko,
@@ -47,7 +50,7 @@
           # Common modules
           ./modules/common
           ./modules/storage/zfs
-          ./modules/hardware/amd
+          ./modules/hardware/amd/enhanced.nix
           ./modules/networking/bonding
           ./modules/networking/performance
           ./modules/services/samba

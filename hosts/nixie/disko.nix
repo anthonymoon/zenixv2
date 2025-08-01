@@ -48,7 +48,7 @@
           normalization = "formD";
           relatime = "on";
         };
-        
+
         datasets = {
           "root" = {
             type = "zfs_fs";
@@ -64,7 +64,7 @@
             options = {
               mountpoint = "legacy";
               recordsize = "128k";
-              dedup = "on";
+              dedup = "off"; # Disabled to save 3-5GB RAM
             };
           };
           "nix" = {
@@ -74,7 +74,7 @@
               mountpoint = "legacy";
               atime = "off";
               sync = "disabled";
-              dedup = "on";
+              dedup = "off"; # Disabled to save 3-5GB RAM
               redundant_metadata = "most";
             };
           };

@@ -1,148 +1,127 @@
-# ZenixV2 - Omarchy-based NixOS Configuration
+# ZenixV2 - NixOS Configuration
 
-A streamlined NixOS configuration based on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) - an opinionated Hyprland setup for modern development.
+A modern NixOS configuration with ZFS, AMD GPU support, and high-performance networking.
 
 ## Features
 
-- 🎨 **Hyprland Compositor** - Modern Wayland tiling window manager
-- 💾 **ZFS Support** - Advanced filesystem with snapshots and compression
-- 🚀 **AMD GPU Optimized** - Full Wayland support with Vulkan
-- 🎯 **Omarchy Integration** - Beautiful themes and productivity tools
-- 📦 **Minimal Profiles** - Simple configurations for different use cases
+- 🎨 **Hyprland Desktop** - Wayland compositor via [omarchy-nix](https://github.com/henrysipp/omarchy-nix)
+- 💾 **ZFS Filesystem** - Advanced storage with compression and deduplication
+- 🚀 **AMD GPU** - Full Vulkan and Wayland support
+- 🌐 **20Gbps Networking** - Dual 10GbE with LACP bonding
+- 🎮 **Gaming Ready** - Steam, GameMode, and low-latency audio
+- 📦 **Declarative** - Fully reproducible system configuration
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Clone this repository
+# Clone repository
 git clone https://github.com/anthonymoon/zenixv2.git
 cd zenixv2
 
-# Install NixOS with your chosen configuration
-sudo nixos-install --flake .#workstation
+# Automated install with disko
+sudo nix --experimental-features "nix-command flakes" \
+  run github:nix-community/disko -- \
+  --mode disko hosts/nixie/disko.nix
+
+# Install NixOS
+sudo nixos-install --flake .#nixie
 ```
 
-### One-Command Installation
+See [Installation Guide](docs/INSTALLATION.md) for detailed instructions and fallback options.
 
-For a fresh install with disk formatting:
+## Documentation
+
+- [Installation Guide](docs/INSTALLATION.md) - Detailed installation instructions
+- [Configuration Guide](docs/CONFIGURATION.md) - System customization and modules
+- [Hardware Setup](hosts/nixie/hardware-configuration.nix) - Example hardware configuration
+
+## System Configuration
+
+### Hardware Support
+
+- **CPU**: AMD Ryzen (with microcode updates)
+- **GPU**: AMD with amdgpu driver
+- **Network**: Intel i40e dual 10GbE
+- **Storage**: NVMe with ZFS
+
+### Key Modules
+
+- `modules/hardware/amd` - AMD GPU configuration
+- `modules/storage/zfs` - ZFS filesystem setup
+- `modules/networking/bonding` - LACP network bonding
+- `modules/networking/performance` - TCP optimizations
+- `modules/services/samba` - SMB3 file sharing
+- `modules/extras/pkgs` - Gaming and multimedia packages
+
+### ZFS Layout
+
+Optimized dataset configuration:
+- Deduplication on `/home` and `/nix`
+- Large recordsize for VMs and Docker
+- Disabled sync for `/tmp` and `/nix`
+- Throughput-optimized logging
+
+## Usage
+
+### System Management
 
 ```bash
-# Workstation setup (recommended)
-sudo nix run github:nix-community/disko/latest#disko-install -- \
-  --flake github:anthonymoon/zenixv2#workstation \
-  --disk main /dev/nvme0n1
+# Update system
+sudo nixos-rebuild switch --flake /etc/nixos#nixie
 
-# Gaming setup
-sudo nix run github:nix-community/disko/latest#disko-install -- \
-  --flake github:anthonymoon/zenixv2#gaming \
-  --disk main /dev/nvme0n1
+# Update home-manager
+home-manager switch --flake /etc/nixos#amoon@nixie
 
-# Development setup
-sudo nix run github:nix-community/disko/latest#disko-install -- \
-  --flake github:anthonymoon/zenixv2#dev \
-  --disk main /dev/nvme0n1
+# Check ZFS status
+zpool status
+zfs list
 ```
 
-**WARNING**: This will destroy all data on `/dev/nvme0n1`!
+### Development
 
-## Available Configurations
+```bash
+# Enter dev shell
+nix develop
 
-| Configuration | Username | Theme | Description |
-|--------------|----------|-------|-------------|
-| `workstation` | user | tokyo-night | Daily driver with productivity apps |
-| `gaming` | gamer | catppuccin | Gaming-optimized with Steam |
-| `dev` | developer | gruvbox | Development environment |
-| `minimal` | user | tokyo-night | Minimal ZFS system |
+# Format code
+nix develop -c nixfmt ./**/*.nix
+
+# Run checks
+nix flake check
+```
 
 ## Customization
 
-### Basic Configuration
-
-Edit `flake.nix` to customize your setup:
-
+Edit `flake.nix` to modify:
 ```nix
-workstation = mkSystem {
-  hostname = "my-pc";
-  username = "myname";
-  fullName = "My Full Name";
-  email = "my.email@example.com";
-  theme = "tokyo-night";  # or kanagawa, everforest, catppuccin, etc.
+omarchy = {
+  full_name = "Your Name";
+  email_address = "your@email.com";
+  theme = "tokyo-night";
 };
 ```
 
-### Available Themes
+Available themes: `tokyo-night`, `kanagawa`, `everforest`, `catppuccin`, `nord`, `gruvbox`
 
-- `tokyo-night` (default)
-- `kanagawa`
-- `everforest`
-- `catppuccin`
-- `nord`
-- `gruvbox`
-- `gruvbox-light`
-- `generated_light` - Extract from wallpaper
-- `generated_dark` - Extract from wallpaper
+## Performance Features
 
-### Custom Wallpaper
+- **Network**: 20Gbps bonded connection with BBR congestion control
+- **Storage**: ZFS with optimized recordsizes and deduplication
+- **Audio**: PipeWire with 64-sample buffer (1.3ms latency)
+- **Gaming**: GameMode, mangohud, and esync support
 
-To use a custom wallpaper with any theme:
-
-```nix
-{
-  omarchy = {
-    theme = "tokyo-night";
-    theme_overrides = {
-      wallpaper_path = ./wallpapers/my-wallpaper.png;
-    };
-  };
-}
-```
-
-## What's Included
-
-### Base System (via omarchy-nix)
-- **Hyprland** - Tiling Wayland compositor
-- **Waybar** - Status bar
-- **Wofi** - Application launcher
-- **Kitty** - Terminal emulator
-- **VSCode** - Code editor
-- **1Password** - Password manager
-- **Brave** - Web browser
-- **And more...**
-
-### Additional Features
-- **ZFS** - Advanced filesystem
-- **AMD GPU drivers** - Full Wayland support
-- **NetworkManager** - Easy network configuration
-- **Pipewire** - Modern audio stack
-
-## Post-Installation
-
-### Change Password
-```bash
-passwd
-```
-
-### Update System
-```bash
-sudo nixos-rebuild switch --flake /etc/nixos#workstation
-```
-
-### Enter Development Shell
-```bash
-nix develop
-```
-
-## System Requirements
+## Requirements
 
 - UEFI boot mode
-- AMD GPU (recommended)
-- NVMe SSD at `/dev/nvme0n1`
+- AMD GPU (NVIDIA removed)
 - 8GB+ RAM for ZFS
+- NVMe SSD at `/dev/nvme0n1`
 
 ## Credits
 
-Based on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) by Henry Sipp, which implements DHH's [Omarchy](https://omakub.org/) for NixOS.
+Built on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) by Henry Sipp.
 
 ## License
 

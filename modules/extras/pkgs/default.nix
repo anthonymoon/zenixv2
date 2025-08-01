@@ -35,15 +35,25 @@
     ffmpeg-full
     obs-studio
 
-    # Editors
+    # Editors and IDEs
     helix
     neovim
-    vscode # vscode-insiders would need custom overlay
+    vscode
+    zed-editor
 
-    # Browsers
-    firefox # zen-browser would need to be added via overlay or flake
-    chromium # thorium would need custom build
+    # Terminal emulators
+    kitty
+    ghostty
+
+    # Browsers - Firefox removed as requested
+    chromium
     microsoft-edge
+
+    # File managers
+    xfce.thunar
+    xfce.thunar-volman
+    xfce.thunar-archive-plugin
+    nemo
 
     # Gaming tools
     mangohud
@@ -55,22 +65,106 @@
     vulkan-extension-layer
     vkbasalt
 
-    # Gaming stores/platforms
+    # Gaming emulators and platforms
     discord
+    # fightcade - not in nixpkgs
+    mame
+
+    # Torrent
+    qbittorrent
 
     # Audio tools
     noisetorch
 
-    # Network tools
+    # Network tools and monitoring
     mtr
     traceroute
     iperf3
+    bandwhich
+    fping
+    wireshark
+    gns3-gui
+    gns3-server
+    cifs-utils
+    # autofs - configured via services below
 
-    # System monitoring
+    # System monitoring and performance
     fio
     glances
     btop
     htop
+    iotop
+    ioping
+    ncdu
+    dust
+    gdu
+    lsd
+    fastfetch
+    smartmontools
+    lm_sensors
+    openrgb
+    linuxPackages.cpupower
+    strace
+    perf-tools
+    linuxPackages.perf
+    systemd-bootchart
+    blktrace
+
+    # Benchmarking
+    geekbench
+    unigine-heaven # cinebench not in nixpkgs
+    unigine-valley
+    unigine-superposition
+    # furmark2 not available, using unigine
+
+    # Development tools
+    nodejs
+    python3
+    python3Packages.pip
+    jdk # Java
+    rustup
+    go
+    aider-chat
+    powershell
+
+    # AI tools
+    # lmstudio not in nixpkgs, would need custom derivation
+
+    # Security and reverse engineering
+    ghidra
+
+    # Virtualization
+    qemu_full
+    quickemu
+    virt-manager
+
+    # Shell tools
+    zsh
+    fish
+    bat
+    fzf
+    ripgrep
+    fd
+
+    # Archive tools
+    pigz
+    p7zip
+    unzip
+
+    # Nerd fonts
+    nerd-fonts.fira-code
+    nerd-fonts.droid-sans-mono
+    nerd-fonts.jetbrains-mono
+    
+    # Powerlevel10k for zsh
+    zsh-powerlevel10k
+
+    # Filesystem tools
+    ntfs3g
+    exfatprogs
+    xfsprogs
+    btrfs-progs
+    apfsprogs
 
     # Flatpak GUI
     gnome-software
@@ -180,4 +274,102 @@
       value = "1048576";
     }
   ];
+
+  # Filesystem support
+  boot.supportedFilesystems = [
+    "ntfs"
+    "exfat"
+    "xfs"
+    "btrfs"
+    "apfs"
+  ];
+
+  # Hardware video acceleration packages are handled in the AMD module
+  # Additional video acceleration packages can be added there
+
+  # LibVA environment
+  environment.variables = {
+    LIBVA_DRIVER_NAME = "radeonsi"; # For AMD, override intel defaults
+  };
+
+  # Enable libvirtd for virtualization
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true;
+      ovmf = {
+        enable = true;
+        packages = [ pkgs.OVMFFull.fd ];
+      };
+    };
+  };
+
+  # Add user to libvirtd and wireshark groups
+  users.users.amoon.extraGroups = [
+    "libvirtd"
+    "kvm"
+    "wireshark"
+  ];
+
+  # Enable zsh as default shell
+  programs.zsh = {
+    enable = true;
+    ohMyZsh = {
+      enable = true;
+      plugins = [
+        "git"
+        "sudo"
+        "docker"
+        "kubectl"
+      ];
+      theme = "powerlevel10k/powerlevel10k";
+    };
+  };
+
+  # Enable fish shell
+  programs.fish.enable = true;
+
+  # Powerlevel10k is already included in main package list
+
+  # TUI greeter configuration
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+        user = "greeter";
+      };
+    };
+  };
+
+  # Enable SMART monitoring
+  services.smartd = {
+    enable = true;
+    defaults.monitored = "-a -o on -S on -n standby,q -s (S/../.././02|L/../../7/04) -W 4,35,40";
+  };
+
+  # Enable wireshark group
+  programs.wireshark = {
+    enable = true;
+    package = pkgs.wireshark;
+  };
+
+  # Enable GNS3
+  security.wrappers.ubridge = {
+    source = "${pkgs.gns3-server}/bin/ubridge";
+    capabilities = "cap_net_admin,cap_net_raw=ep";
+    owner = "root";
+    group = "root";
+    permissions = "u+rx,g+x,o+x";
+  };
+
+  # AutoFS for automatic mounting
+  services.autofs = {
+    enable = true;
+    autoMaster = ''
+      /net -hosts --timeout=60
+    '';
+  };
 }
