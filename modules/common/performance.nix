@@ -217,4 +217,58 @@
     usbutils
     nvme-cli
   ];
+
+  # MangoHud configuration via config file
+  environment.etc."MangoHud/MangoHud.conf".text = ''
+    # Performance metrics
+    fps
+    fps_limit=0
+    frame_timing=1
+    cpu_stats
+    cpu_temp
+    cpu_power
+    gpu_stats
+    gpu_temp
+    gpu_power
+    gpu_mem_clock
+    gpu_core_clock
+    vram
+    ram
+
+    # Display settings
+    position=top-left
+    font_size=24
+    background_alpha=0.4
+    round_corners=10
+
+    # Colors
+    gpu_color=2E9762
+    cpu_color=2E97CB
+    vram_color=AD64C1
+    ram_color=C26693
+    fps_color=E8E3E3
+
+    # Features
+    gamemode
+    vulkan_driver
+    wine
+
+    # Toggle keys
+    toggle_hud=Shift_R+F12
+    toggle_fps_limit=Shift_L+F1
+
+    # Additional settings
+    gpu_load_change
+    cpu_load_change
+    core_load_change
+    legacy_layout=0
+    frametime
+    table_columns=3
+  '';
+
+  # MangoHud environment variables
+  environment.variables = {
+    MANGOHUD = "1";
+    MANGOHUD_CONFIG = "/etc/MangoHud/MangoHud.conf";
+  };
 }

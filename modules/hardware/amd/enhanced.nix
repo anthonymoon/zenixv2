@@ -243,6 +243,14 @@
     }
   ];
 
+  # Enable zenpower kernel module for enhanced Ryzen monitoring
+  boot.extraModulePackages = with config.boot.kernelPackages; [
+    zenpower
+  ];
+
+  # Blacklist k10temp to use zenpower instead
+  boot.blacklistedKernelModules = [ "k10temp" ];
+
   # System performance settings
   systemd.services.amd-performance = {
     description = "AMD Performance Optimizations";
