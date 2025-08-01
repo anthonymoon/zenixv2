@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Define users directly - simple and clear
   users.users = {
     # Secure root user

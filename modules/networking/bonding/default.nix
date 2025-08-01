@@ -4,11 +4,9 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Enable bonding kernel module
-  boot.kernelModules = [ "bonding" ];
+  boot.kernelModules = ["bonding"];
 
   # Network configuration with LACP bonding
   networking = {

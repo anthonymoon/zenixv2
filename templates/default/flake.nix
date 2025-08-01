@@ -16,63 +16,61 @@
     };
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      omarchy-nix,
-      home-manager,
-      ...
-    }@inputs:
-    {
-      nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          # Hardware configuration
-          ./hardware-configuration.nix
+  outputs = {
+    self,
+    nixpkgs,
+    omarchy-nix,
+    home-manager,
+    ...
+  } @ inputs: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        # Hardware configuration
+        ./hardware-configuration.nix
 
-          # Omarchy modules
-          omarchy-nix.nixosModules.default
-          home-manager.nixosModules.home-manager
+        # Omarchy modules
+        omarchy-nix.nixosModules.default
+        home-manager.nixosModules.home-manager
 
-          # System configuration
-          {
-            networking.hostName = "myhost";
+        # System configuration
+        {
+          networking.hostName = "myhost";
 
-            # Configure omarchy
-            omarchy = {
-              full_name = "Your Name";
-              email_address = "your.email@example.com";
-              theme = "tokyo-night";
+          # Configure omarchy
+          omarchy = {
+            full_name = "Your Name";
+            email_address = "your.email@example.com";
+            theme = "tokyo-night";
+          };
+
+          # Configure home-manager
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            users.myuser = {
+              imports = [omarchy-nix.homeManagerModules.default];
+              home.stateVersion = "24.11";
             };
+          };
 
-            # Configure home-manager
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              users.myuser = {
-                imports = [ omarchy-nix.homeManagerModules.default ];
-                home.stateVersion = "24.11";
-              };
-            };
+          # User configuration
+          users.users.myuser = {
+            isNormalUser = true;
+            extraGroups = [
+              "wheel"
+              "networkmanager"
+            ];
+            initialPassword = "changeme";
+          };
 
-            # User configuration
-            users.users.myuser = {
-              isNormalUser = true;
-              extraGroups = [
-                "wheel"
-                "networkmanager"
-              ];
-              initialPassword = "changeme";
-            };
+          # Basic services
+          networking.networkmanager.enable = true;
 
-            # Basic services
-            networking.networkmanager.enable = true;
-
-            # System state version
-            system.stateVersion = "24.11";
-          }
-        ];
-      };
+          # System state version
+          system.stateVersion = "24.11";
+        }
+      ];
     };
+  };
 }

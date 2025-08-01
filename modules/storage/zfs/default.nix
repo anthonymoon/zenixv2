@@ -3,12 +3,13 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.storage.zfs;
-in
-{
+in {
+  imports = [
+    ./filesystem-labels.nix
+  ];
+
   options.storage.zfs = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -67,13 +68,13 @@ in
 
             options = lib.mkOption {
               type = lib.types.attrsOf lib.types.str;
-              default = { };
+              default = {};
               description = "Additional ZFS dataset options";
             };
           };
         }
       );
-      default = { };
+      default = {};
       description = "ZFS datasets configuration";
     };
 
@@ -91,42 +92,43 @@ in
 
     kernelParams = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ ];
+      default = [];
       description = "Additional kernel parameters for ZFS";
     };
   };
 
   config = lib.mkIf cfg.enable {
     # Enable ZFS
-    boot.supportedFilesystems = [ "zfs" ];
+    boot.supportedFilesystems = ["zfs"];
     boot.zfs.devNodes = "/dev/disk/by-id";
 
     # Set host ID
     networking.hostId = cfg.hostId;
 
     # Kernel parameters
-    boot.kernelParams = [
-      "zfs.zfs_arc_max=${toString cfg.arcSize.max}"
-      "zfs.zfs_arc_min=${toString cfg.arcSize.min}"
-    ]
-    ++ lib.optionals cfg.optimizeForNvme [
-      # NVMe optimizations
-      "zfs.l2arc_noprefetch=0"
-      "zfs.l2arc_write_boost=33554432"
-      "zfs.l2arc_write_max=16777216"
-      "zfs.zfs_txg_timeout=5"
-      "zfs.zfs_vdev_async_read_max_active=6"
-      "zfs.zfs_vdev_async_read_min_active=2"
-      "zfs.zfs_vdev_async_write_max_active=6"
-      "zfs.zfs_vdev_async_write_min_active=2"
-      "zfs.zfs_vdev_sync_read_max_active=6"
-      "zfs.zfs_vdev_sync_read_min_active=2"
-      "zfs.zfs_vdev_sync_write_max_active=6"
-      "zfs.zfs_vdev_sync_write_min_active=2"
-      "zfs.zfs_dirty_data_max_percent=40"
-      "zfs.zfs_vdev_aggregation_limit=1048576"
-    ]
-    ++ cfg.kernelParams;
+    boot.kernelParams =
+      [
+        "zfs.zfs_arc_max=${toString cfg.arcSize.max}"
+        "zfs.zfs_arc_min=${toString cfg.arcSize.min}"
+      ]
+      ++ lib.optionals cfg.optimizeForNvme [
+        # NVMe optimizations
+        "zfs.l2arc_noprefetch=0"
+        "zfs.l2arc_write_boost=33554432"
+        "zfs.l2arc_write_max=16777216"
+        "zfs.zfs_txg_timeout=5"
+        "zfs.zfs_vdev_async_read_max_active=6"
+        "zfs.zfs_vdev_async_read_min_active=2"
+        "zfs.zfs_vdev_async_write_max_active=6"
+        "zfs.zfs_vdev_async_write_min_active=2"
+        "zfs.zfs_vdev_sync_read_max_active=6"
+        "zfs.zfs_vdev_sync_read_min_active=2"
+        "zfs.zfs_vdev_sync_write_max_active=6"
+        "zfs.zfs_vdev_sync_write_min_active=2"
+        "zfs.zfs_dirty_data_max_percent=40"
+        "zfs.zfs_vdev_aggregation_limit=1048576"
+      ]
+      ++ cfg.kernelParams;
 
     # ZFS services
     services.zfs = {

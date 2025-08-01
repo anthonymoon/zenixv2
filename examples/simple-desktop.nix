@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Instead of mkDesktopConfig with complex if-else chains,
   # just enable what you need directly
 

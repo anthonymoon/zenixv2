@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   imports = [
     ../zfs
   ];
@@ -22,22 +20,22 @@
   # Bind mounts for persistence
   fileSystems."/etc/nixos" = {
     device = "/persist/etc/nixos";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/var/log" = {
     device = "/persist/var/log";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/etc/ssh" = {
     device = "/persist/etc/ssh";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/home" = {
     device = "/persist/home";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   # Machine ID persistence

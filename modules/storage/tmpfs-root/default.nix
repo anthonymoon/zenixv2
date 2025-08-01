@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Root on tmpfs
   fileSystems."/" = lib.mkDefault {
     device = "none";
@@ -23,7 +21,7 @@
     device = "/dev/disk/by-label/persist";
     fsType = "ext4";
     neededForBoot = true;
-    options = [ "noatime" ];
+    options = ["noatime"];
   };
 
   # Boot partition
@@ -35,18 +33,18 @@
   # Essential bind mounts
   fileSystems."/etc/nixos" = {
     device = "/persist/etc/nixos";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   fileSystems."/var/log" = {
     device = "/persist/var/log";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   # SSH host keys persistence
   fileSystems."/etc/ssh" = {
     device = "/persist/etc/ssh";
-    options = [ "bind" ];
+    options = ["bind"];
   };
 
   # Machine ID persistence
@@ -56,5 +54,5 @@
   boot.tmp.cleanOnBoot = true;
 
   # No swap on tmpfs root
-  swapDevices = lib.mkForce [ ];
+  swapDevices = lib.mkForce [];
 }

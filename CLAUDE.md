@@ -1,34 +1,25 @@
-# CLAUDE.md - AI Assistant Specification for ZenixV2
+# CLAUDE.md - AI Assistant Context for ZenixV2
 
 This file provides context and guidelines for AI assistants working with the ZenixV2 NixOS configuration framework.
 
 ## Project Overview
 
-ZenixV2 is a unified NixOS configuration framework that consolidates multiple system configurations into a modular, maintainable structure. It emphasizes:
-- Code reusability through modular design
-- Hardware auto-detection and adaptation
-- Security-first approach with multiple hardening levels
-- Flexible storage options (ZFS, tmpfs, standard filesystems)
-- Profile-based system configuration
+ZenixV2 is a high-performance NixOS configuration framework that emphasizes:
+- **Modularity**: Reusable components for different hardware and use cases
+- **Performance**: Optimized for gaming, content creation, and development
+- **Correctness**: Type-safe configuration with comprehensive validation
+- **Documentation**: Every module and option must be documented
 
-## Key Principles
+## Architecture Principles
 
-1. **Modularity First**: Every feature should be a reusable module
-2. **Smart Defaults**: Configurations should work out-of-box with sensible defaults
-3. **Progressive Enhancement**: Simple for beginners, powerful for experts
-4. **Security Conscious**: Never compromise security for convenience
-5. **Documentation Driven**: Every module and option must be documented
-
-## Code Style Guidelines
-
-### Nix Code
-- Use `nixfmt` for consistent formatting
-- Prefer attribute sets over long function argument lists
+### 1. Module Design
+- Each module should have a single, clear purpose
 - Use `mkOption` with full type and description for all options
+- Provide sensible defaults that work out-of-the-box
+- Enable conditional loading with `mkIf` guards
 - Group related configuration under logical namespaces
-- Follow the module pattern: options definition → config implementation
 
-### Module Structure
+### 2. Code Style
 ```nix
 { config, lib, pkgs, ... }:
 let
@@ -46,209 +37,196 @@ in
 }
 ```
 
-### Naming Conventions
-- Modules: lowercase with hyphens (e.g., `zfs-ephemeral`)
-- Options: camelCase (e.g., `arcSize`, `optimizeForNvme`)
-- Files: lowercase with hyphens
-- Functions: camelCase for helpers, mkPascalCase for builders
+### 3. Performance Considerations
+- Use `mkDefault` for performance settings users might want to override
+- Cache expensive operations where possible
+- Lazy evaluation is your friend - don't compute unless needed
+- Document performance implications of options
+
+## Key Components
+
+### Storage (ZFS)
+- **Datasets**: Optimized recordsizes per workload (16K for DBs, 1M for VMs)
+- **NVMe**: Special optimizations enabled by default
+- **Memory**: Configurable ARC size with sensible defaults (2-8GB)
+- **Compression**: ZSTD globally, LZ4 for temporary data
+
+### Hardware Support
+- **AMD**: Full GPU (amdgpu, ROCm) and CPU (zenpower) support
+- **Intel**: Basic CPU and integrated GPU support
+- **Nvidia**: Proprietary driver support (currently disabled)
+- **Auto-detection**: Hardware detected and configured automatically
+
+### Networking
+- **Bonding**: LACP mode 4 for redundancy and performance
+- **Performance**: TCP BBR, optimized buffers for 20Gbps
+- **Services**: mDNS, SMB3, SSH with sensible defaults
+
+### Desktop (via omarchy-nix)
+- **Hyprland**: Wayland compositor with GPU acceleration
+- **Terminal**: Kitty as default, Ghostty as alternative
+- **Shell**: Zsh with Starship prompt
+- **Editor**: Neovim with AstroNvim configuration
 
 ## Common Tasks
 
 ### Adding a New Module
-1. Create module file in appropriate directory under `modules/`
-2. Follow standard module pattern with options and config
-3. Add to parent directory's `default.nix`
-4. Document all options with descriptions
-5. Add usage example to module header comment
-6. Test in at least one configuration
-
-### Adding Hardware Support
-1. Detect hardware in `hardware/auto-detect.nix`
-2. Create specific module in `hardware/modules/`
-3. Apply configuration conditionally based on detection
-4. Test on actual hardware if possible
-5. Document any hardware-specific quirks
-
-### Creating a Profile
-1. Create profile directory under `profiles/`
-2. Enable and configure related modules
-3. Add profile option to enable/disable
-4. Document target use case and requirements
-5. Test profile combinations for conflicts
-
-## Architecture Decisions
-
-### Module Hierarchy
-- **Core**: Essential system functions (always loaded)
-- **Common**: Shared base configurations (usually loaded)
-- **Hardware**: Hardware-specific adaptations (auto-detected)
-- **Storage**: Filesystem and storage configurations
-- **Desktop**: Desktop environment configurations
-- **Services**: System services and daemons
-- **Security**: Hardening and security features
-- **Profiles**: High-level configuration combinations
-
-### Configuration Resolution
-1. Host-specific configuration (highest priority)
-2. Profile configuration
-3. Module defaults
-4. NixOS defaults (lowest priority)
+1. Create module file in appropriate directory
+2. Follow standard module pattern with options/config
+3. Add to parent directory's imports
+4. Document all options
+5. Test with minimal configuration
+6. Add usage example to module header
 
 ### Hardware Detection
-- CPU detection reads `/proc/cpuinfo`
-- GPU detection scans PCI devices
-- Platform detection reads DMI information
-- All detection has fallback defaults
+```nix
+# Example from hardware/auto-detect.nix
+cpu = {
+  isIntel = builtins.elem "GenuineIntel" (getCpuVendor cpuinfo);
+  isAmd = builtins.elem "AuthenticAMD" (getCpuVendor cpuinfo);
+};
+```
+
+### Performance Tuning
+- Always measure before optimizing
+- Document why specific values were chosen
+- Provide options to disable optimizations
+- Consider resource constraints (RAM, CPU)
 
 ## Testing Guidelines
 
-### Module Testing
-- Test enable/disable functionality
-- Verify option interactions
-- Check for assertion failures
-- Test with minimal configuration
-- Test in combination with other modules
+### Build Testing
+```bash
+# Check syntax and evaluation
+nix flake check
+
+# Build configuration without switching
+nixos-rebuild build --flake .#hostname
+
+# Test in VM
+nixos-rebuild build-vm --flake .#hostname
+```
 
 ### Integration Testing
-- Use `nixos-rebuild build` before switching
-- Test in VM with `nixos-rebuild build-vm`
-- Verify profile combinations work
-- Check resource usage (RAM, disk)
+- Test module combinations for conflicts
+- Verify hardware detection works correctly
+- Check resource usage is within bounds
 - Ensure clean rollback capability
-
-## Security Considerations
-
-### Never Do
-- Store secrets in plain text
-- Disable security features by default
-- Use weak cryptographic defaults
-- Expose services without authentication
-- Run services as root unnecessarily
-
-### Always Do
-- Use `mkDefault` for security settings
-- Enable firewall by default
-- Use systemd service hardening
-- Validate user input
-- Document security implications
-
-## Performance Guidelines
-
-### Optimization Approach
-1. Measure first (use metrics)
-2. Optimize critical paths
-3. Cache expensive operations
-4. Lazy evaluation where possible
-5. Document performance tradeoffs
-
-### Resource Targets
-- Minimal: <200MB RAM, <2GB disk
-- Workstation: <2GB RAM idle, <15GB disk
-- Server: Optimize for specific workload
-- Always leave headroom for operation
 
 ## Troubleshooting Patterns
 
-### Common Issues
-1. **Module conflicts**: Check option definitions
-2. **Hardware detection failures**: Add manual overrides
-3. **Performance problems**: Check enabled services
-4. **Boot failures**: Use previous generation
-5. **Network issues**: Verify firewall rules
+### Module Conflicts
+- Check for duplicate option definitions
+- Verify `mkForce` usage for overrides
+- Look for circular dependencies
+- Use `--show-trace` for detailed errors
 
-### Debugging Tools
-- `nixos-option` - Query configuration values
-- `nix repl` - Interactive configuration exploration
-- `nix-diff` - Compare derivations
-- System logs via `journalctl`
-- Build with `--show-trace` for errors
+### Performance Issues
+- Check enabled services and their resource usage
+- Verify ZFS ARC size is appropriate
+- Look for CPU governor settings
+- Monitor with `htop`, `iotop`, `amdgpu_top`
 
-## Contributing Guidelines
-
-### Pull Request Checklist
-- [ ] Code follows style guidelines
-- [ ] All options have descriptions
-- [ ] Changes are tested
-- [ ] Documentation is updated
-- [ ] No security regressions
-- [ ] Commits are semantic
-
-### Commit Message Format
-```
-type(scope): description
-
-Longer explanation if needed.
-Fixes/Closes #issue
-```
-
-Types: feat, fix, docs, style, refactor, perf, test, chore
+### Boot Failures
+- Previous generation is always available
+- ZFS pools can be imported from live ISO
+- Hardware modules can be disabled if problematic
+- Bootloader is systemd-boot (not GRUB)
 
 ## AI Assistant Instructions
 
 When working with this codebase:
 
-1. **Respect Modularity**: Suggest changes that enhance reusability
-2. **Maintain Backwards Compatibility**: Don't break existing configurations
+1. **Respect Modularity**: Changes should enhance reusability
+2. **Maintain Compatibility**: Don't break existing configurations
 3. **Document Everything**: Update docs when changing functionality
-4. **Think Security**: Consider security implications of changes
-5. **Test Suggestions**: Provide test commands with code changes
-6. **Keep It Simple**: Prefer simple solutions over complex ones
+4. **Test Suggestions**: Provide test commands with code changes
+5. **Think Performance**: Consider impact on system resources
+6. **Security First**: Never compromise security for convenience
 
-### Code Generation
+### Code Generation Guidelines
 
 When generating Nix code:
-- Use the established module patterns
-- Include option types and descriptions
-- Add header comments explaining purpose
-- Provide usage examples
-- Consider edge cases and failures
+- Use established patterns from existing modules
+- Include proper option types and descriptions
+- Add header comments explaining the module's purpose
+- Consider edge cases and provide safe defaults
+- Test with `nix flake check` before suggesting
 
-### Review Priorities
+### Common Patterns
 
-When reviewing code:
-1. Security vulnerabilities
-2. Breaking changes
-3. Performance regressions
-4. Missing documentation
-5. Style inconsistencies
+#### Conditional Service Enable
+```nix
+services.foo = lib.mkIf (cfg.enable && cfg.foo.enable) {
+  enable = true;
+  settings = cfg.foo.settings;
+};
+```
+
+#### Hardware-Specific Configuration
+```nix
+boot.kernelModules = lib.mkIf config.hardware.amd.enable [
+  "amdgpu"
+  "zenpower"
+];
+```
+
+#### Performance Options
+```nix
+performance = lib.mkOption {
+  type = lib.types.bool;
+  default = true;
+  description = "Enable performance optimizations (increases resource usage)";
+};
+```
+
+## Recent Changes
+
+### Partition Labels (Latest)
+- Boot partition uses label `disk-main-esp`
+- ZFS uses `/dev/disk/by-partlabel` for reliability
+- Disko handles all filesystem configuration
+
+### Download Buffer Fix
+- Added `download-buffer-size = 256MB` to prevent warnings
+- Configured in both cachix and performance modules
+- Also includes parallel download optimizations
+
+### Hardware Configuration
+- Separated from filesystem definitions
+- `hardware.nix` contains only hardware settings
+- Disko handles all filesystem configuration
 
 ## Quick Reference
 
 ### File Locations
-- Modules: `modules/`
-- Host configs: `hosts/`
-- Library functions: `lib/`
+- Main config: `flake.nix`
+- Host configs: `hosts/{hostname}/`
+- Modules: `modules/{category}/{module}/`
 - Scripts: `scripts/`
-- Documentation: `docs/` and inline
 
 ### Key Commands
 ```bash
-# Check syntax
+# Check configuration
 nix flake check
 
-# Build configuration
-nixos-rebuild build --flake .#hostname
-
-# Test in VM
-nixos-rebuild build-vm --flake .#hostname
-
 # Format code
-nixfmt *.nix
+alejandra .
 
-# Run pre-commit
-./scripts/pre-commit.sh
+# Build and switch
+sudo nixos-rebuild switch --flake .#hostname
+
+# Update inputs
+nix flake update
 ```
 
-### Useful Patterns
-- Enable module: `module.enable = true;`
-- Override default: `lib.mkForce value`
-- Conditional config: `lib.mkIf condition { ... }`
-- Merge configs: `lib.mkMerge [ ... ]`
-- Default value: `lib.mkDefault value`
+### Module Categories
+- `common/` - Base system configuration
+- `hardware/` - CPU, GPU, platform support
+- `storage/` - Filesystems and disk management
+- `networking/` - Network configuration and optimization
+- `services/` - System services and daemons
+- `desktop/` - Desktop environments and display servers
+- `security/` - Hardening and security features
 
-## Contact
-
-Repository: https://github.com/anthonymoon/zenixv2
-Issues: https://github.com/anthonymoon/zenixv2/issues
-
-Remember: The goal is maintainable, secure, and flexible NixOS configurations that work reliably across diverse hardware and use cases.
+Remember: The goal is maintainable, performant, and reliable NixOS configurations that work across diverse hardware.

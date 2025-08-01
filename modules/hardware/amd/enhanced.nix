@@ -5,16 +5,14 @@
   pkgs,
   inputs,
   ...
-}:
-
-{
+}: {
   imports = [
     # Import nixos-hardware AMD GPU optimizations
     inputs.nixos-hardware.nixosModules.common-gpu-amd
   ];
 
   # AMD GPU kernel modules and firmware
-  boot.initrd.kernelModules = [ "amdgpu" ];
+  boot.initrd.kernelModules = ["amdgpu"];
   boot.kernelModules = [
     "kvm-amd"
     "amdgpu"
@@ -74,7 +72,7 @@
   # Make MSRs writable for overclocking tools
   systemd.services.msr-tools = {
     description = "Enable MSR access for overclocking";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -96,7 +94,7 @@
   };
 
   # Add user to msr group for overclocking access
-  users.groups.msr = { };
+  users.groups.msr = {};
   users.users.amoon = {
     extraGroups = [
       "msr"
@@ -210,7 +208,7 @@
   # Enable lm_sensors
   systemd.services.lm_sensors = {
     description = "Initialize hardware monitoring sensors";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -249,13 +247,13 @@
   ];
 
   # Blacklist k10temp to use zenpower instead
-  boot.blacklistedKernelModules = [ "k10temp" ];
+  boot.blacklistedKernelModules = ["k10temp"];
 
   # System performance settings
   systemd.services.amd-performance = {
     description = "AMD Performance Optimizations";
-    after = [ "multi-user.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["multi-user.target"];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

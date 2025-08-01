@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Firewall
   networking.firewall = {
     enable = lib.mkDefault true;

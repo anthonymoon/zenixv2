@@ -4,11 +4,9 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Enable ntsync module (Linux 6.10+ feature)
-  boot.kernelModules = [ "ntsync" ];
+  boot.kernelModules = ["ntsync"];
 
   # Create ntsync device with proper permissions
   services.udev.extraRules = ''
@@ -19,15 +17,15 @@
   # Ensure the kernel has ntsync support
   boot.kernelPatches =
     lib.optionals (lib.versionOlder config.boot.kernelPackages.kernel.version "6.10")
-      [
-        {
-          name = "ntsync";
-          patch = null;
-          extraStructuredConfig = with lib.kernel; {
-            NTSYNC = module;
-          };
-        }
-      ];
+    [
+      {
+        name = "ntsync";
+        patch = null;
+        extraStructuredConfig = with lib.kernel; {
+          NTSYNC = module;
+        };
+      }
+    ];
 
   # Add Wine with ntsync support to system packages
   environment.systemPackages = with pkgs; [

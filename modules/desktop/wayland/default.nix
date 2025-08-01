@@ -5,9 +5,7 @@
   pkgs,
   inputs,
   ...
-}:
-
-{
+}: {
   # Enable Wayland support
   programs.xwayland.enable = true;
 
@@ -40,8 +38,7 @@
   # Ensure proper permissions for Wayland
   security.polkit.enable = true;
 
-  # Enable Hyprland (via omarchy-nix)
-  # This is already handled by omarchy-nix
+  # Hyprland is enabled via omarchy-nix
 
   # Enable Niri as an alternative compositor
   programs.niri = {
@@ -147,13 +144,13 @@
     fontconfig = {
       enable = true;
       defaultFonts = {
-        serif = [ "Noto Serif" ];
-        sansSerif = [ "Noto Sans" ];
+        serif = ["Noto Serif"];
+        sansSerif = ["Noto Sans"];
         monospace = [
           "JetBrains Mono"
           "Source Code Pro"
         ];
-        emoji = [ "Noto Color Emoji" ];
+        emoji = ["Noto Color Emoji"];
       };
     };
   };
@@ -169,7 +166,7 @@
                 layout "us"
             }
         }
-        
+
         touchpad {
             tap
             natural-scroll
@@ -188,21 +185,21 @@
     layout {
         gaps 16
         center-focused-column "never"
-        
+
         preset-column-widths {
             proportion 0.5
             proportion 0.66667
             proportion 1.0
         }
-        
+
         default-column-width { proportion 0.5; }
-        
+
         focus-ring {
             width 4
             active-color "#7fc8ff"
             inactive-color "#505050"
         }
-        
+
         border {
             width 4
             active-color "#ffc87f"
@@ -223,30 +220,30 @@
     binds {
         // Mod-Shift-Slash to show help
         Mod+Shift+Slash { show-hotkey-overlay; }
-        
+
         // Mod-Return to spawn terminal
         Mod+Return { spawn "kitty"; }
-        
+
         // Mod-D to spawn launcher
         Mod+D { spawn "fuzzel"; }
-        
+
         // Mod-Shift-E to logout
         Mod+Shift+E { quit; }
-        
+
         // Mod-Q to close window
         Mod+Q { close-window; }
-        
+
         // Window movement
         Mod+Left { focus-column-left; }
         Mod+Right { focus-column-right; }
         Mod+Up { focus-window-up; }
         Mod+Down { focus-window-down; }
-        
+
         Mod+Shift+Left { move-column-left; }
         Mod+Shift+Right { move-column-right; }
         Mod+Shift+Up { move-window-up; }
         Mod+Shift+Down { move-window-down; }
-        
+
         // Workspace switching
         Mod+1 { focus-workspace 1; }
         Mod+2 { focus-workspace 2; }
@@ -257,7 +254,7 @@
         Mod+7 { focus-workspace 7; }
         Mod+8 { focus-workspace 8; }
         Mod+9 { focus-workspace 9; }
-        
+
         Mod+Shift+1 { move-column-to-workspace 1; }
         Mod+Shift+2 { move-column-to-workspace 2; }
         Mod+Shift+3 { move-column-to-workspace 3; }
@@ -267,12 +264,12 @@
         Mod+Shift+7 { move-column-to-workspace 7; }
         Mod+Shift+8 { move-column-to-workspace 8; }
         Mod+Shift+9 { move-column-to-workspace 9; }
-        
+
         // Window sizing
         Mod+R { switch-preset-column-width; }
         Mod+F { maximize-column; }
         Mod+Shift+F { fullscreen-window; }
-        
+
         // Screenshot
         Print { screenshot; }
         Mod+Print { screenshot-screen; }

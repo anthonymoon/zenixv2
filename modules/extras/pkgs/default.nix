@@ -3,11 +3,9 @@
   config,
   lib,
   pkgs,
-  inputs ? { },
+  inputs ? {},
   ...
-}:
-
-{
+}: {
   # Import gaming optimizations from nixos-gaming if available
   imports = lib.optionals (inputs ? nixos-gaming) [
     inputs.nixos-gaming.nixosModules.pipewireLowLatency
@@ -300,7 +298,7 @@
       swtpm.enable = true;
       ovmf = {
         enable = true;
-        packages = [ pkgs.OVMFFull.fd ];
+        packages = [pkgs.OVMFFull.fd];
       };
     };
   };

@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Instead of complex detection functions, just use simple conditions
 
   # AMD CPU support
@@ -17,8 +15,8 @@
 
   # Kernel modules for virtualization
   boot.kernelModules =
-    lib.optionals config.hardware.cpu.amd.updateMicrocode [ "kvm-amd" ]
-    ++ lib.optionals config.hardware.cpu.intel.updateMicrocode [ "kvm-intel" ];
+    lib.optionals config.hardware.cpu.amd.updateMicrocode ["kvm-amd"]
+    ++ lib.optionals config.hardware.cpu.intel.updateMicrocode ["kvm-intel"];
 
   # Graphics - just enable what you need
   # For NVIDIA:

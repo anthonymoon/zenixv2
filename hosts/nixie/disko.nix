@@ -16,14 +16,18 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
-                # Use a label for the ESP partition
-                extraArgs = [ "-n" "ESP" ];
+                mountOptions = ["umask=0077"];
+                # Use lowercase label for the ESP partition
+                extraArgs = [
+                  "-n"
+                  "disk-main-esp"
+                ];
               };
             };
             zfs = {
               priority = 2;
               size = "100%";
+              type = "BF00"; # ZFS partition type
               content = {
                 type = "zfs";
                 pool = "rpool";

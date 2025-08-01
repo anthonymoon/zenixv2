@@ -3,9 +3,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Base system configuration
   config = {
     # Nix configuration
@@ -23,7 +21,7 @@
         cores = 0; # Use all cores
 
         # Security
-        allowed-users = [ "@wheel" ];
+        allowed-users = ["@wheel"];
         trusted-users = [
           "root"
           "@wheel"
@@ -43,7 +41,7 @@
       # Store optimization
       optimise = {
         automatic = true;
-        dates = [ "weekly" ];
+        dates = ["weekly"];
       };
     };
 

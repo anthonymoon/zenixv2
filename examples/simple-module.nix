@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Instead of complex option types and builders, just use simple options
   options.services.myapp = {
     enable = lib.mkEnableOption "my application";
@@ -28,7 +26,7 @@
     # Direct systemd service configuration
     systemd.services.myapp = {
       description = "My Application";
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = ["multi-user.target"];
       serviceConfig = {
         ExecStart = "${pkgs.myapp}/bin/myapp --port ${toString config.services.myapp.port}";
         StateDirectory = "myapp";
@@ -42,6 +40,6 @@
     };
 
     # Direct firewall configuration
-    networking.firewall.allowedTCPPorts = [ config.services.myapp.port ];
+    networking.firewall.allowedTCPPorts = [config.services.myapp.port];
   };
 }

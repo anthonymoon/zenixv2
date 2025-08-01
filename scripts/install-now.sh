@@ -6,7 +6,7 @@ set -e
 
 # Configuration
 DISK="${DISK:-/dev/nvme0n1}"
-HOSTNAME="${HOSTNAME:-minimal-zfs}"
+HOSTNAME="${HOSTNAME:-nixie}"
 FLAKE="${FLAKE:-github:anthonymoon/zenixv2}"
 
 echo "Starting NixOS ZFS installation on ${DISK}..."

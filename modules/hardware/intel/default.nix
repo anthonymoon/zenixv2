@@ -4,11 +4,9 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Intel drivers
-  services.xserver.videoDrivers = [ "modesetting" ];
+  services.xserver.videoDrivers = ["modesetting"];
 
   # Enable Intel GPU
   hardware.opengl = {

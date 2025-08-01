@@ -1,7 +1,5 @@
 # Disko configuration for ZFS
-{ lib, ... }:
-
-{
+{lib, ...}: {
   disko.devices = {
     disk = {
       main = {

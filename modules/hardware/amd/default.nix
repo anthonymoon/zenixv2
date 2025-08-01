@@ -4,11 +4,9 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # AMD drivers - Wayland optimized
-  services.xserver.videoDrivers = [ "amdgpu" ];
+  services.xserver.videoDrivers = ["amdgpu"];
 
   # Graphics support with AMD (using new option names)
   hardware.graphics = {
@@ -45,6 +43,6 @@
   };
 
   # Kernel modules for AMD GPU
-  boot.initrd.kernelModules = [ "amdgpu" ];
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.initrd.kernelModules = ["amdgpu"];
+  boot.kernelModules = ["kvm-amd"];
 }

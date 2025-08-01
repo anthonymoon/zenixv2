@@ -4,11 +4,9 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # ZFS support
-  boot.supportedFilesystems = [ "zfs" ];
+  boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
 
   # Minimal ZFS ARC settings - reduce from 50% to 12.5% of RAM
@@ -93,8 +91,8 @@
   # Monitoring script to track ZFS memory usage
   systemd.services.zfs-memory-monitor = {
     description = "Monitor ZFS ARC memory usage";
-    after = [ "zfs.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["zfs.target"];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.writeShellScript "zfs-arc-summary" ''

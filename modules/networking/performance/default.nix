@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Kernel parameters optimized for 20Gbps networking
   boot.kernel.sysctl = {
     # Core network settings
@@ -77,8 +75,8 @@
   # CPU affinity and interrupt handling
   systemd.services.network-tuning = {
     description = "Network Performance Tuning";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["network.target"];
+    wantedBy = ["multi-user.target"];
     script = ''
       # Set CPU affinity for network interrupts
       # This spreads interrupts across all CPU cores

@@ -1,6 +1,8 @@
-{ config, lib, ... }:
-
 {
+  config,
+  lib,
+  ...
+}: {
   options.common.cachix = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -50,6 +52,9 @@
       # Connection settings
       connect-timeout = 5;
       download-attempts = 3;
+
+      # Increase download buffer size to prevent warnings
+      download-buffer-size = 256 * 1024 * 1024; # 256 MB
 
       # Fallback to building if substitutes fail
       fallback = true;

@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   imports = [
     ../hardening
   ];
@@ -139,5 +137,5 @@
   users.users.root.hashedPassword = "!";
 
   # Only allow wheel group to use nix
-  nix.settings.allowed-users = [ "@wheel" ];
+  nix.settings.allowed-users = ["@wheel"];
 }

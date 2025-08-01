@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   # Boot kernel parameters for maximum performance
   boot.kernelParams = [
     # Disable CPU mitigations for maximum performance
@@ -50,7 +48,7 @@
     earlySetup = true;
     font = "${pkgs.terminus_font}/share/consolefonts/ter-v24n.psf.gz";
     # Set console resolution to 1920x1080
-    packages = with pkgs; [ terminus_font ];
+    packages = with pkgs; [terminus_font];
   };
 
   # Console resolution is already set in main boot.kernelParams above
@@ -58,7 +56,7 @@
   # Enable multiple VT TTYs (1-6 by default, we'll ensure 1-3 are active)
   services.getty = {
     # Ensure TTYs 1-3 are always available
-    extraArgs = [ "--noclear" ];
+    extraArgs = ["--noclear"];
   };
 
   systemd.services."getty@tty1".enable = true;
@@ -74,7 +72,7 @@
   };
 
   # Ensure KMS is enabled early for Plymouth
-  boot.initrd.kernelModules = [ "amdgpu" ];
+  boot.initrd.kernelModules = ["amdgpu"];
 
   # Enable VFAT filesystem support
   boot.supportedFilesystems = [
@@ -116,6 +114,10 @@
       # Build performance
       build-cores = 0; # Use all cores for each build
       sandbox = true;
+      max-silent-time = 1800; # 30 minutes
+      timeout = 3600; # 1 hour
+      keep-outputs = true;
+      keep-derivations = true;
 
       # Trusted users for binary cache
       trusted-users = [
@@ -124,11 +126,17 @@
       ];
     };
 
-    # Garbage collection settings
+    # Garbage collection settings - extends retention to 30 days
     gc = {
+      automatic = lib.mkDefault true;
+      dates = lib.mkDefault "weekly";
+      options = lib.mkForce "--delete-older-than 30d"; # Force 30 days for performance systems
+    };
+
+    # Store optimization
+    optimise = {
       automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 14d";
+      dates = ["weekly"];
     };
 
     # Enable flakes and new commands

@@ -4,9 +4,7 @@
   lib,
   pkgs,
   ...
-}:
-
-{
+}: {
   services.samba = {
     enable = true;
     openFirewall = true;
@@ -100,7 +98,7 @@
     shell = "${pkgs.shadow}/sbin/nologin";
   };
 
-  users.groups.smbgroup = { };
+  users.groups.smbgroup = {};
 
   # Create data directory
   systemd.tmpfiles.rules = [

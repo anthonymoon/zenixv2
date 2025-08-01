@@ -3,26 +3,21 @@
   lib,
   writeText,
   runCommand,
-}:
-
-facterReport:
-
-let
+}: facterReport: let
   # Parse facter report
   report = facterReport;
 
   # Extract hardware info
-  disks = report.hardware.storage.disks or [ ];
+  disks = report.hardware.storage.disks or [];
   nvmeDisks = lib.filter (d: lib.hasPrefix "nvme" d.name) disks;
   sataDisks = lib.filter (d: lib.hasPrefix "sd" d.name) disks;
 
   primaryDisk =
-    if nvmeDisks != [ ] then
-      "/dev/${(lib.head nvmeDisks).name}"
-    else if sataDisks != [ ] then
-      "/dev/${(lib.head sataDisks).name}"
-    else
-      throw "No suitable disk found";
+    if nvmeDisks != []
+    then "/dev/${(lib.head nvmeDisks).name}"
+    else if sataDisks != []
+    then "/dev/${(lib.head sataDisks).name}"
+    else throw "No suitable disk found";
 
   isUEFI = report.boot.efi or true;
 
@@ -35,7 +30,7 @@ let
         disko.inputs.nixpkgs.follows = "nixpkgs";
         zenixv2.url = "github:anthonymoon/zenixv2";
       };
-      
+
       outputs = { self, nixpkgs, disko, zenixv2 }:
         let
           system = "x86_64-linux";
@@ -55,24 +50,23 @@ let
                       type = "gpt";
                       partitions = {
                         ${
-                          if isUEFI then
-                            ''
-                              ESP = {
-                                size = "512M";
-                                type = "EF00";
-                                content = {
-                                  type = "filesystem";
-                                  format = "vfat";
-                                  mountpoint = "/boot";
-                                };
-                              };''
-                          else
-                            ''
-                              boot = {
-                                size = "1M";
-                                type = "EF02";
-                              };''
-                        }
+      if isUEFI
+      then ''
+        ESP = {
+          size = "512M";
+          type = "EF00";
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
+          };
+        };''
+      else ''
+        boot = {
+          size = "1M";
+          type = "EF02";
+        };''
+    }
                         zfs = {
                           size = "100%";
                           content = {
@@ -124,21 +118,33 @@ let
                     };
                   };
                 };
-                
+
                 # Import base config from zenixv2
                 imports = [
                   zenixv2.nixosModules.common
                   zenixv2.nixosModules.zfs
                 ];
-                
+
                 # Hardware-specific config
-                boot.loader.systemd-boot.enable = ${if isUEFI then "true" else "false"};
-                boot.loader.grub.enable = ${if isUEFI then "false" else "true"};
-                ${if !isUEFI then ''boot.loader.grub.device = "${primaryDisk}";'' else ""}
-                
+                boot.loader.systemd-boot.enable = ${
+      if isUEFI
+      then "true"
+      else "false"
+    };
+                boot.loader.grub.enable = ${
+      if isUEFI
+      then "false"
+      else "true"
+    };
+                ${
+      if !isUEFI
+      then ''boot.loader.grub.device = "${primaryDisk}";''
+      else ""
+    }
+
                 networking.hostId = builtins.substring 0 8 (builtins.hashString "sha256" "${primaryDisk}");
                 networking.hostName = "nixos";
-                
+
                 system.stateVersion = "24.05";
               }
             ];
@@ -146,9 +152,8 @@ let
         };
     }
   '';
-
 in
-runCommand "installer-${builtins.substring 0 8 (builtins.hashString "sha256" primaryDisk)}"
+  runCommand "installer-${builtins.substring 0 8 (builtins.hashString "sha256" primaryDisk)}"
   {
     passthru = {
       inherit primaryDisk isUEFI;
@@ -170,24 +175,23 @@ runCommand "installer-${builtins.substring 0 8 (builtins.hashString "sha256" pri
             type = "gpt";
             partitions = {
               ${
-                if isUEFI then
-                  ''
-                    ESP = {
-                      size = "512M";
-                      type = "EF00";
-                      content = {
-                        type = "filesystem";
-                        format = "vfat";
-                        mountpoint = "/boot";
-                      };
-                    };''
-                else
-                  ''
-                    boot = {
-                      size = "1M";
-                      type = "EF02";
-                    };''
-              }
+      if isUEFI
+      then ''
+        ESP = {
+          size = "512M";
+          type = "EF00";
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
+          };
+        };''
+      else ''
+        boot = {
+          size = "1M";
+          type = "EF02";
+        };''
+    }
               zfs = {
                 size = "100%";
                 content = {
@@ -246,7 +250,11 @@ runCommand "installer-${builtins.substring 0 8 (builtins.hashString "sha256" pri
     cat > $out/metadata.json << JSON
     {
       "primaryDisk": "${primaryDisk}",
-      "isUEFI": ${if isUEFI then "true" else "false"},
+      "isUEFI": ${
+      if isUEFI
+      then "true"
+      else "false"
+    },
       "hostId": "${builtins.substring 0 8 (builtins.hashString "sha256" primaryDisk)}"
     }
     JSON
