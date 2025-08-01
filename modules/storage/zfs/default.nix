@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.storage.zfs;
@@ -25,7 +30,7 @@ in
         default = 2147483648; # 2GB
         description = "Minimum ARC size in bytes";
       };
-      
+
       max = lib.mkOption {
         type = lib.types.int;
         default = 8589934592; # 8GB
@@ -40,28 +45,35 @@ in
     };
 
     datasets = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule {
-        options = {
-          compression = lib.mkOption {
-            type = lib.types.enum [ "off" "lz4" "gzip" "zstd" ];
-            default = "zstd";
-            description = "Compression algorithm";
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            compression = lib.mkOption {
+              type = lib.types.enum [
+                "off"
+                "lz4"
+                "gzip"
+                "zstd"
+              ];
+              default = "zstd";
+              description = "Compression algorithm";
+            };
+
+            mountpoint = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Dataset mountpoint";
+            };
+
+            options = lib.mkOption {
+              type = lib.types.attrsOf lib.types.str;
+              default = { };
+              description = "Additional ZFS dataset options";
+            };
           };
-          
-          mountpoint = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
-            default = null;
-            description = "Dataset mountpoint";
-          };
-          
-          options = lib.mkOption {
-            type = lib.types.attrsOf lib.types.str;
-            default = {};
-            description = "Additional ZFS dataset options";
-          };
-        };
-      });
-      default = {};
+        }
+      );
+      default = { };
       description = "ZFS datasets configuration";
     };
 
@@ -79,7 +91,7 @@ in
 
     kernelParams = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "Additional kernel parameters for ZFS";
     };
   };
@@ -88,7 +100,7 @@ in
     # Enable ZFS
     boot.supportedFilesystems = [ "zfs" ];
     boot.zfs.devNodes = "/dev/disk/by-id";
-    
+
     # Set host ID
     networking.hostId = cfg.hostId;
 
@@ -96,7 +108,8 @@ in
     boot.kernelParams = [
       "zfs.zfs_arc_max=${toString cfg.arcSize.max}"
       "zfs.zfs_arc_min=${toString cfg.arcSize.min}"
-    ] ++ lib.optionals cfg.optimizeForNvme [
+    ]
+    ++ lib.optionals cfg.optimizeForNvme [
       # NVMe optimizations
       "zfs.l2arc_noprefetch=0"
       "zfs.l2arc_write_boost=33554432"
@@ -112,7 +125,8 @@ in
       "zfs.zfs_vdev_sync_write_min_active=2"
       "zfs.zfs_dirty_data_max_percent=40"
       "zfs.zfs_vdev_aggregation_limit=1048576"
-    ] ++ cfg.kernelParams;
+    ]
+    ++ cfg.kernelParams;
 
     # ZFS services
     services.zfs = {
@@ -120,7 +134,7 @@ in
         enable = cfg.autoScrub;
         interval = "weekly";
       };
-      
+
       autoSnapshot = lib.mkIf cfg.autoSnapshot {
         enable = true;
         frequent = 4;
@@ -129,7 +143,7 @@ in
         weekly = 4;
         monthly = 12;
       };
-      
+
       trim.enable = true;
     };
 

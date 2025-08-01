@@ -1,5 +1,10 @@
 # Simple user configuration following NixOS best practices
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Define users directly - simple and clear
@@ -11,17 +16,17 @@
         # Add admin SSH keys here
       ];
     };
-    
+
     # Example user with sudo access
     amoon = {
       isNormalUser = true;
       description = "Anthony Moon";
-      extraGroups = [ 
-        "wheel"           # Enable sudo
-        "networkmanager"  # Network configuration
-        "audio"           # Audio access
-        "video"           # Video/graphics access
-        "docker"          # Docker access (if needed)
+      extraGroups = [
+        "wheel" # Enable sudo
+        "networkmanager" # Network configuration
+        "audio" # Audio access
+        "video" # Video/graphics access
+        "docker" # Docker access (if needed)
       ];
       shell = pkgs.zsh;
       # Generate with: mkpasswd -m sha-512

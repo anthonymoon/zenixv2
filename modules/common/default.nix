@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Base system configuration
@@ -7,17 +12,23 @@
     nix = {
       settings = {
         # Enable flakes
-        experimental-features = [ "nix-command" "flakes" ];
-        
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+
         # Optimizations
         auto-optimise-store = true;
         max-jobs = "auto";
         cores = 0; # Use all cores
-        
+
         # Security
         allowed-users = [ "@wheel" ];
-        trusted-users = [ "root" "@wheel" ];
-        
+        trusted-users = [
+          "root"
+          "@wheel"
+        ];
+
         # Better errors
         show-trace = true;
       };
@@ -40,34 +51,40 @@
     boot = {
       # Clean /tmp on boot
       tmp.cleanOnBoot = lib.mkDefault true;
-      
+
       # Kernel modules for common hardware
-      initrd.availableKernelModules = [ 
-        "nvme" 
-        "xhci_pci" 
-        "ahci" 
-        "usb_storage" 
-        "usbhid" 
-        "sd_mod" 
+      initrd.availableKernelModules = [
+        "nvme"
+        "xhci_pci"
+        "ahci"
+        "usb_storage"
+        "usbhid"
+        "sd_mod"
       ];
-      
+
       # Common kernel modules
-      kernelModules = lib.mkDefault [ "kvm-amd" "kvm-intel" ];
+      kernelModules = lib.mkDefault [
+        "kvm-amd"
+        "kvm-intel"
+      ];
     };
 
     # Networking
     networking = {
       # Enable NetworkManager by default
       networkmanager.enable = lib.mkDefault true;
-      
+
       # Firewall
       firewall = {
         enable = lib.mkDefault true;
         allowPing = lib.mkDefault true;
       };
-      
+
       # Use systemd-resolved
-      nameservers = lib.mkDefault [ "1.1.1.1" "8.8.8.8" ];
+      nameservers = lib.mkDefault [
+        "1.1.1.1"
+        "8.8.8.8"
+      ];
     };
 
     # Time and locale
@@ -88,34 +105,34 @@
       util-linux
       procps
       psmisc
-      
+
       # Editors
       vim
       nano
-      
+
       # Network tools
       iproute2
       iputils
       nettools
       wget
       curl
-      
+
       # System tools
       htop
       btop
       iotop
       lsof
-      
+
       # File management
       tree
       ncdu
       fd
       ripgrep
-      
+
       # Development basics
       git
       tmux
-      
+
       # Hardware tools
       pciutils
       usbutils
@@ -136,7 +153,7 @@
 
       # Time sync
       timesyncd.enable = lib.mkDefault true;
-      
+
       # Firmware updates
       fwupd.enable = lib.mkDefault true;
     };

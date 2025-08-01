@@ -45,7 +45,7 @@
           atime = "off";
           xattr = "sa";
         };
-        
+
         datasets = {
           "root" = {
             type = "zfs_fs";

@@ -41,15 +41,16 @@
 
   config = lib.mkIf config.common.cachix.enable {
     nix.settings = {
-      substituters = config.common.cachix.substituters ++ 
-        lib.optional config.common.cachix.enableLocalCache config.common.cachix.localCacheUrl;
-      
+      substituters =
+        config.common.cachix.substituters
+        ++ lib.optional config.common.cachix.enableLocalCache config.common.cachix.localCacheUrl;
+
       trusted-public-keys = config.common.cachix.trustedPublicKeys;
-      
+
       # Connection settings
       connect-timeout = 5;
       download-attempts = 3;
-      
+
       # Fallback to building if substitutes fail
       fallback = true;
     };
