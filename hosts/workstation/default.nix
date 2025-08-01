@@ -21,10 +21,10 @@
   
   # Sound is configured in the workstation profile
   
-  # OpenGL
-  hardware.opengl = {
+  # Graphics (using new option names)
+  hardware.graphics = {
     enable = true;
-    driSupport32Bit = true;
+    enable32Bit = true;
   };
   
   # Basic packages for workstation

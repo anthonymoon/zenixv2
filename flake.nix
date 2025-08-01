@@ -126,6 +126,7 @@
             ./hosts/workstation
             ./modules/profiles/workstation
             ./modules/desktop/kde
+            ./modules/hardware/amd
           ];
         };
         
@@ -136,6 +137,7 @@
             ./hosts/workstation
             ./modules/profiles/workstation
             ./modules/desktop/gnome
+            ./modules/hardware/amd
           ];
         };
         
@@ -147,7 +149,7 @@
             ./hosts/gaming
             ./modules/profiles/gaming
             ./modules/desktop/kde
-            ./modules/hardware/nvidia
+            ./modules/hardware/amd
           ];
         };
         
@@ -170,6 +172,7 @@
             ./hosts/dev
             ./modules/profiles/development
             ./modules/desktop/kde
+            ./modules/hardware/amd
           ];
         };
         
