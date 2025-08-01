@@ -123,38 +123,28 @@
           ];
         };
         
-        # Workstation configurations
+        # Workstation configuration - Hyprland only
         workstation = lib.mkSystem {
           hostname = "workstation";
           system = "x86_64-linux";
           modules = [
             ./hosts/workstation
-            ./modules/profiles/workstation
-            ./modules/desktop/kde
+            ./modules/profiles/hyprland
             ./modules/hardware/amd
+            ./modules/omarchy/nixos/default.nix
           ];
         };
         
-        workstation-gnome = lib.mkSystem {
-          hostname = "workstation-gnome";
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/workstation
-            ./modules/profiles/workstation
-            ./modules/desktop/gnome
-            ./modules/hardware/amd
-          ];
-        };
-        
-        # Gaming system
+        # Gaming system - Hyprland
         gaming = lib.mkSystem {
           hostname = "gaming";
           system = "x86_64-linux";
           modules = [
             ./hosts/gaming
             ./modules/profiles/gaming
-            ./modules/desktop/kde
+            ./modules/profiles/hyprland
             ./modules/hardware/amd
+            ./modules/omarchy/nixos/default.nix
           ];
         };
         
@@ -169,27 +159,15 @@
           ];
         };
         
-        # Development machine
+        # Development machine - Hyprland
         dev = lib.mkSystem {
           hostname = "dev";
           system = "x86_64-linux";
           modules = [
             ./hosts/dev
             ./modules/profiles/development
-            ./modules/desktop/kde
-            ./modules/hardware/amd
-          ];
-        };
-        
-        # Hyprland workstation
-        hyprland = lib.mkSystem {
-          hostname = "hyprland";
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/workstation
             ./modules/profiles/hyprland
             ./modules/hardware/amd
-            # Include omarchy modules
             ./modules/omarchy/nixos/default.nix
           ];
         };
@@ -255,9 +233,7 @@
         zfs-ephemeral = import ./modules/storage/zfs-ephemeral;
         tmpfs-root = import ./modules/storage/tmpfs-root;
         
-        # Desktop environments
-        kde = import ./modules/desktop/kde;
-        gnome = import ./modules/desktop/gnome;
+        # Desktop environment
         hyprland = import ./modules/desktop/hyprland;
         
         # Hardware support

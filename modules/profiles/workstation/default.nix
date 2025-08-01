@@ -23,27 +23,26 @@
     gimp
     inkscape
     
-    # Utilities
-    kate
-    konsole
-    dolphin
-    ark
-    spectacle
+    # Terminal emulators
+    kitty
+    alacritty
     
-    # System
-    partition-manager
-    filelight
-    ksystemlog
+    # File managers
+    nautilus
+    ranger
+    
+    # Utilities
+    gparted
+    baobab
   ];
   
-  # Enable desktop features
-  services.xserver.enable = lib.mkDefault true;
+  # Desktop features are handled by Hyprland module
   
   # Printing
   services.printing.enable = true;
   services.avahi = {
     enable = true;
-    nssmdns = true;
+    nssmdns4 = true;
   };
   
   # Sound

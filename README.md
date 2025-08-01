@@ -20,7 +20,7 @@ A modular, maintainable NixOS configuration framework that consolidates multiple
 - 🚀 **Modular Architecture** - Reusable modules for common functionality
 - 🔧 **Auto-Detection** - Automatic hardware detection for CPU, GPU, and platform
 - 💾 **Storage Flexibility** - Unified ZFS, tmpfs, and standard filesystem support
-- 🎨 **Desktop Environments** - Pre-configured KDE and GNOME modules
+- 🎨 **Desktop Environment** - Modern Hyprland Wayland compositor
 - 🔒 **Security Profiles** - From minimal to fully hardened configurations
 - 📦 **Smart Caching** - Integrated Cachix with local cache support
 - 🏗️ **Profile System** - Mix and match configurations for different use cases
@@ -116,11 +116,10 @@ sudo nixos-rebuild switch --flake .#workstation
 | `minimal-zfs` | Minimal with ZFS | Storage servers |
 | `ephemeral` | Stateless with tmpfs root | Kiosks, testing |
 | `ephemeral-zfs` | Stateless with ZFS | Secure workstations |
-| `workstation` | Full desktop with KDE | Daily driver |
-| `workstation-gnome` | Full desktop with GNOME | Alternative DE |
-| `gaming` | Gaming-optimized system | Gaming + work |
+| `workstation` | Hyprland desktop with ZFS | Modern daily driver |
+| `gaming` | Gaming-optimized Hyprland | Gaming + work |
 | `server` | Server configuration | Web services |
-| `dev` | Development machine | Programming |
+| `dev` | Development with Hyprland | Programming |
 | `hardened` | Security-focused | High-security needs |
 
 ## Module System Architecture
@@ -264,7 +263,7 @@ mkdir -p hosts/newhost
   
   # Your configuration
   storage.zfs.enable = true;
-  desktop.kde.enable = true;
+  desktop.hyprland.enable = true;
 }
 ```
 
@@ -286,9 +285,9 @@ nixosConfigurations.newhost = lib.mkSystem {
 - ~200MB RAM, ~2GB disk
 
 #### workstation
-- Full-featured desktop system
+- Full-featured desktop system with Hyprland
 - Office apps, browsers, media players
-- Choice of desktop environment
+- Modern Wayland compositor with tiling
 
 #### server
 - Headless server configuration
@@ -319,7 +318,7 @@ nixosConfigurations.newhost = lib.mkSystem {
 {
   profiles.workstation.enable = true;
   profiles.development.enable = true;
-  desktop.kde.enable = true;
+  desktop.hyprland.enable = true;
 }
 
 # Secure server

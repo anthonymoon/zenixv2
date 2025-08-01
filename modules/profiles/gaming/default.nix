@@ -69,11 +69,10 @@
   };
   
   # 32-bit support for games
-  hardware.opengl = {
-    driSupport32Bit = true;
+  hardware.graphics = {
+    enable32Bit = true;
     extraPackages32 = with pkgs.pkgsi686Linux; [
       libva
-      vaapiIntel
     ];
   };
 }
