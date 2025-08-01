@@ -51,11 +51,10 @@
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
   # Network interfaces detected:
-  # - enp4s0f0np0: 10GbE Intel i40e
-  # - enp4s0f1np1: 10GbE Intel i40e
+  # - enp4s0f0np0: 10GbE Intel i40e (bonded)
+  # - enp4s0f1np1: 10GbE Intel i40e (bonded)
   # - wlan0: Intel WiFi
-  networking.interfaces.enp4s0f0np0.useDHCP = lib.mkDefault true;
-  networking.interfaces.enp4s0f1np1.useDHCP = lib.mkDefault true;
+  # Note: enp4s0f0np0 and enp4s0f1np1 are configured via bonding module
   networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

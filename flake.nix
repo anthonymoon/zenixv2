@@ -33,6 +33,9 @@
         ./modules/common
         ./modules/storage/zfs
         ./modules/hardware/amd
+        ./modules/networking/bonding
+        ./modules/networking/performance
+        ./modules/services/samba
         
         # Omarchy modules
         omarchy-nix.nixosModules.default
