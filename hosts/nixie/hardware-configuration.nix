@@ -8,8 +8,12 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
+  # Hardware: AMD Ryzen 5 5600X 6-Core Processor
+  # Storage: Crucial T500 2TB NVMe SSD (CT2000T500SSD8)
+  # Network: Dual 10GbE (Intel i40e) + Intel WiFi
+
   boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "usbhid" "uas" "sd_mod" ];
-  boot.initrd.kernelModules = [ ];
+  boot.initrd.kernelModules = [ "amdgpu" ];
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
@@ -46,12 +50,19 @@
   # still possible to use this option, but it's recommended to use it in conjunction
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp4s0f0np0.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp4s0f1np1.useDHCP = lib.mkDefault true;
-  # networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
+  # Network interfaces detected:
+  # - enp4s0f0np0: 10GbE Intel i40e
+  # - enp4s0f1np1: 10GbE Intel i40e
+  # - wlan0: Intel WiFi
+  networking.interfaces.enp4s0f0np0.useDHCP = lib.mkDefault true;
+  networking.interfaces.enp4s0f1np1.useDHCP = lib.mkDefault true;
+  networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  
+  # Enable firmware for Intel WiFi and network cards
+  hardware.enableRedistributableFirmware = true;
   
   # Enable UEFI boot
   boot.loader.systemd-boot.enable = true;
