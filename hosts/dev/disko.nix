@@ -1,1 +1,0 @@
-../workstation/disko.nix
