@@ -44,14 +44,18 @@
           acltype = "posixacl";
           atime = "off";
           xattr = "sa";
+          dnodesize = "auto";
+          normalization = "formD";
+          relatime = "on";
         };
-
+        
         datasets = {
           "root" = {
             type = "zfs_fs";
             mountpoint = "/";
             options = {
               mountpoint = "legacy";
+              recordsize = "128k";
             };
           };
           "home" = {
@@ -59,6 +63,8 @@
             mountpoint = "/home";
             options = {
               mountpoint = "legacy";
+              recordsize = "128k";
+              dedup = "on";
             };
           };
           "nix" = {
@@ -67,6 +73,9 @@
             options = {
               mountpoint = "legacy";
               atime = "off";
+              sync = "disabled";
+              dedup = "on";
+              redundant_metadata = "most";
             };
           };
           "var" = {
@@ -74,6 +83,54 @@
             mountpoint = "/var";
             options = {
               mountpoint = "legacy";
+              recordsize = "128k";
+            };
+          };
+          "var/lib" = {
+            type = "zfs_fs";
+            mountpoint = "/var/lib";
+            options = {
+              mountpoint = "legacy";
+              recordsize = "16k";
+            };
+          };
+          "var/lib/docker" = {
+            type = "zfs_fs";
+            mountpoint = "/var/lib/docker";
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+              dedup = "off";
+            };
+          };
+          "var/log" = {
+            type = "zfs_fs";
+            mountpoint = "/var/log";
+            options = {
+              mountpoint = "legacy";
+              recordsize = "128k";
+              logbias = "throughput";
+              dedup = "off";
+            };
+          };
+          "var/lib/libvirt" = {
+            type = "zfs_fs";
+            mountpoint = "/var/lib/libvirt";
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+              compression = "off";
+              dedup = "off";
+            };
+          };
+          "tmp" = {
+            type = "zfs_fs";
+            mountpoint = "/tmp";
+            options = {
+              mountpoint = "legacy";
+              sync = "disabled";
+              compression = "lz4";
+              dedup = "off";
             };
           };
         };
