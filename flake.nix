@@ -192,6 +192,16 @@
             }
           ];
         };
+        
+        # Nixie configuration
+        nixie = mkSystem {
+          hostname = "nixie";
+          username = "user";
+          fullName = "NixOS User";
+          email = "user@example.com";
+          theme = "tokyo-night";
+          extraModules = [ ./hosts/nixie/disko.nix ];
+        };
       };
 
       # Development shell
