@@ -17,16 +17,21 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    # Hyprland and related
+    hyprland.url = "github:hyprwm/Hyprland";
+    nix-colors.url = "github:misterio77/nix-colors";
+    
+    # Home Manager
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     
     # Additional inputs - uncomment as needed:
     # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     # nixos-hardware.url = "github:NixOS/nixos-hardware";
     # agenix = {
     #   url = "github:ryantm/agenix";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
-    # home-manager = {
-    #   url = "github:nix-community/home-manager";
     #   inputs.nixpkgs.follows = "nixpkgs";
     # };
     # lanzaboote = {
@@ -36,7 +41,7 @@
     # impermanence.url = "github:nix-community/impermanence";
   };
 
-  outputs = { self, nixpkgs, disko, ... }@inputs:
+  outputs = { self, nixpkgs, disko, hyprland, nix-colors, home-manager, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
@@ -176,6 +181,19 @@
           ];
         };
         
+        # Hyprland workstation
+        hyprland = lib.mkSystem {
+          hostname = "hyprland";
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/workstation
+            ./modules/profiles/hyprland
+            ./modules/hardware/amd
+            # Include omarchy modules
+            ./modules/omarchy/nixos/default.nix
+          ];
+        };
+        
         # Security-focused
         hardened = lib.mkSystem {
           hostname = "hardened";
@@ -240,6 +258,7 @@
         # Desktop environments
         kde = import ./modules/desktop/kde;
         gnome = import ./modules/desktop/gnome;
+        hyprland = import ./modules/desktop/hyprland;
         
         # Hardware support
         nvidia = import ./modules/hardware/nvidia;
@@ -252,6 +271,9 @@
         # Common configurations
         common = import ./modules/common;
         cachix = import ./modules/common/cachix.nix;
+        
+        # Omarchy modules
+        omarchy = import ./modules/omarchy/config.nix;
       };
       
       # Disko configurations
