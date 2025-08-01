@@ -35,7 +35,7 @@
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/1264-6DA6";
+    device = "/dev/disk/by-partlabel/ESP";
     fsType = "vfat";
     options = [
       "fmask=0022"
@@ -103,8 +103,27 @@
   # Enable firmware for Intel WiFi and network cards
   hardware.enableRedistributableFirmware = true;
 
-  # Enable UEFI boot
-  boot.loader.systemd-boot.enable = true;
+  # Enable UEFI boot with systemd-boot
+  boot.loader.systemd-boot = {
+    enable = true;
+    # Add rescue/emergency mode entries
+    extraEntries = {
+      "nixos-rescue.conf" = ''
+        title NixOS Rescue Mode
+        linux /EFI/nixos/@kernelTarget@
+        initrd /EFI/nixos/@initrdTarget@
+        options @kernelParams@ rescue
+      '';
+      "nixos-emergency.conf" = ''
+        title NixOS Emergency Mode
+        linux /EFI/nixos/@kernelTarget@
+        initrd /EFI/nixos/@initrdTarget@
+        options @kernelParams@ emergency
+      '';
+    };
+    # Keep more generations for recovery
+    configurationLimit = 10;
+  };
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Network configuration for ZFS

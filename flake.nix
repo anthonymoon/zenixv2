@@ -55,6 +55,7 @@
           ./modules/networking/performance
           ./modules/services/samba
           ./modules/extras/pkgs
+          ./modules/desktop/wayland
 
           # Omarchy modules
           omarchy-nix.nixosModules.default
@@ -86,15 +87,52 @@
               isNormalUser = true;
               extraGroups = [
                 "wheel"
-                "networkmanager"
                 "audio"
                 "video"
               ];
-              initialPassword = "changeme";
+              initialPassword = "nixos";
             };
 
-            # Basic services
-            networking.networkmanager.enable = true;
+            # Enable passwordless sudo
+            security.sudo.extraRules = [
+              {
+                users = [ "amoon" ];
+                commands = [
+                  {
+                    command = "ALL";
+                    options = [ "NOPASSWD" ];
+                  }
+                ];
+              }
+            ];
+
+            # Basic services - using systemd-networkd instead of NetworkManager
+            networking.useNetworkd = true;
+            systemd.network.enable = true;
+            services.resolved.enable = true;
+            
+            # Timezone and NTP
+            time.timeZone = "America/Vancouver";
+            services.timesyncd = {
+              enable = true;
+              servers = [ "time.google.com" ];
+            };
+            
+            # SSH configuration
+            services.openssh = {
+              enable = true;
+              settings = {
+                PermitRootLogin = "yes";
+                PasswordAuthentication = true;
+              };
+            };
+            
+            # Disable firewall
+            networking.firewall.enable = false;
+            
+            # Enable mDNS
+            services.avahi.nssmdns4 = true;
+            networking.nameservers = [ "8.8.8.8" "8.8.4.4" ];
 
             # System state version
             system.stateVersion = "24.11";

@@ -20,13 +20,13 @@ read -p "Continue? (yes/no): " confirm
 # Partition the disk
 echo "Creating partitions..."
 parted -s "$DISK" -- mklabel gpt
-parted -s "$DISK" -- mkpart ESP fat32 1MB 513MB
+parted -s "$DISK" -- mkpart ESP fat32 1MB 2049MB
 parted -s "$DISK" -- set 1 esp on
-parted -s "$DISK" -- mkpart primary 513MB 100%
+parted -s "$DISK" -- mkpart primary 2049MB 100%
 
-# Format EFI partition
+# Format EFI partition with ESP label
 echo "Formatting EFI partition..."
-mkfs.fat -F32 -n EFI "${DISK}p1"
+mkfs.fat -F32 -n ESP "${DISK}p1"
 
 # Create ZFS pool with optimized settings
 echo "Creating ZFS pool..."

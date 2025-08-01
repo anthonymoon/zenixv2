@@ -107,17 +107,7 @@
     "d /srv/samba/data 0755 smbuser smbgroup -"
   ];
 
-  # Firewall rules for Samba
-  networking.firewall = {
-    allowedTCPPorts = [
-      139
-      445
-    ];
-    allowedUDPPorts = [
-      137
-      138
-    ];
-  };
+  # Firewall is disabled globally, so no need for port rules
 
   # Enable Avahi for network discovery
   services.avahi = {

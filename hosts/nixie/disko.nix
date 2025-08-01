@@ -10,13 +10,15 @@
           partitions = {
             ESP = {
               priority = 1;
-              size = "512M";
+              size = "2G";
               type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
                 mountOptions = [ "umask=0077" ];
+                # Use a label for the ESP partition
+                extraArgs = [ "-n" "ESP" ];
               };
             };
             zfs = {
