@@ -1,449 +1,149 @@
-# ZenixV2 - Unified NixOS Configuration Framework
+# ZenixV2 - Omarchy-based NixOS Configuration
 
-A modular, maintainable NixOS configuration framework that consolidates multiple system configurations into a single, well-organized flake.
-
-## Table of Contents
-
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Available Configurations](#available-configurations)
-- [Module System Architecture](#module-system-architecture)
-- [Usage Guide](#usage-guide)
-- [System Profiles](#system-profiles)
-- [API Reference](#api-reference)
-- [Migration Guide](#migration-guide)
-- [Contributing](#contributing)
+A streamlined NixOS configuration based on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) - an opinionated Hyprland setup for modern development.
 
 ## Features
 
-- 🚀 **Modular Architecture** - Reusable modules for common functionality
-- 🔧 **Auto-Detection** - Automatic hardware detection for CPU, GPU, and platform
-- 💾 **Storage Flexibility** - Unified ZFS, tmpfs, and standard filesystem support
-- 🎨 **Desktop Environment** - Modern Hyprland Wayland compositor
-- 🔒 **Security Profiles** - From minimal to fully hardened configurations
-- 📦 **Smart Caching** - Integrated Cachix with local cache support
-- 🏗️ **Profile System** - Mix and match configurations for different use cases
+- 🎨 **Hyprland Compositor** - Modern Wayland tiling window manager
+- 💾 **ZFS Support** - Advanced filesystem with snapshots and compression
+- 🚀 **AMD GPU Optimized** - Full Wayland support with Vulkan
+- 🎯 **Omarchy Integration** - Beautiful themes and productivity tools
+- 📦 **Minimal Profiles** - Simple configurations for different use cases
 
 ## Quick Start
 
-### Pure Nix Installation (Recommended)
+### Installation
 
 ```bash
-# Generate hardware-specific installer
-sudo nix run github:anthonymoon/zenixv2#generate-installer
+# Clone this repository
+git clone https://github.com/anthonymoon/zenixv2.git
+cd zenixv2
 
-# This creates a hardware-specific installer that:
-# - Detects your hardware using nixos-facter
-# - Generates optimal disk configuration
-# - Creates a ready-to-run installer
-
-# The command will output the location of generated installer
-# Navigate there and run: nix run .
+# Install NixOS with your chosen configuration
+sudo nixos-install --flake .#workstation
 ```
 
-### Direct Installation
+### One-Command Installation
+
+For a fresh install with disk formatting:
 
 ```bash
-# Install a specific configuration to a specific disk
-sudo DISK=/dev/nvme0n1 nix run github:anthonymoon/zenixv2#install-minimal-zfs
-
-# Or using disko-install directly
+# Workstation setup (recommended)
 sudo nix run github:nix-community/disko/latest#disko-install -- \
-  --flake github:anthonymoon/zenixv2#minimal-zfs \
+  --flake github:anthonymoon/zenixv2#workstation \
+  --disk main /dev/nvme0n1
+
+# Gaming setup
+sudo nix run github:nix-community/disko/latest#disko-install -- \
+  --flake github:anthonymoon/zenixv2#gaming \
+  --disk main /dev/nvme0n1
+
+# Development setup
+sudo nix run github:nix-community/disko/latest#disko-install -- \
+  --flake github:anthonymoon/zenixv2#dev \
   --disk main /dev/nvme0n1
 ```
 
-### Hardware-Specific Template
-
-```bash
-# Create installer in current directory
-nix flake init -t github:anthonymoon/zenixv2#installer
-
-# Detect hardware (requires root)
-sudo nix run nixpkgs#nixos-facter -- -o facter.json
-
-# Install with detected hardware
-sudo nix run .
-```
-
-### Using Other Templates
-
-```bash
-# Create a new NixOS configuration from template
-nix flake new -t github:anthonymoon/zenixv2#workstation my-nixos-config
-cd my-nixos-config
-```
-
-### Building Configurations
-
-```bash
-# Build without switching
-nixos-rebuild build --flake .#workstation
-
-# Test in VM
-nixos-rebuild build-vm --flake .#workstation
-
-# Switch to configuration
-sudo nixos-rebuild switch --flake .#workstation
-```
-
-## Project Structure
-
-```
-.
-├── flake.nix           # Main flake definition
-├── lib/                # Helper functions and utilities
-│   └── default.nix     # Core library functions
-├── modules/            # Reusable NixOS modules
-│   ├── common/         # Base configuration
-│   ├── desktop/        # Desktop environments
-│   ├── hardware/       # Hardware support
-│   ├── profiles/       # System profiles
-│   ├── security/       # Security hardening
-│   ├── services/       # System services
-│   └── storage/        # Storage configurations
-├── hosts/              # Host-specific configurations
-├── scripts/            # Installation and utility scripts
-└── templates/          # Quick-start templates
-```
+**WARNING**: This will destroy all data on `/dev/nvme0n1`!
 
 ## Available Configurations
 
-| Configuration | Description | Use Case |
-|--------------|-------------|----------|
-| `minimal` | Bare minimum system | Servers, containers |
-| `minimal-zfs` | Minimal with ZFS | Storage servers |
-| `ephemeral` | Stateless with tmpfs root | Kiosks, testing |
-| `ephemeral-zfs` | Stateless with ZFS | Secure workstations |
-| `workstation` | Hyprland desktop with ZFS | Modern daily driver |
-| `gaming` | Gaming-optimized Hyprland | Gaming + work |
-| `server` | Server configuration | Web services |
-| `dev` | Development with Hyprland | Programming |
-| `hardened` | Security-focused | High-security needs |
+| Configuration | Username | Theme | Description |
+|--------------|----------|-------|-------------|
+| `workstation` | user | tokyo-night | Daily driver with productivity apps |
+| `gaming` | gamer | catppuccin | Gaming-optimized with Steam |
+| `dev` | developer | gruvbox | Development environment |
+| `minimal` | user | tokyo-night | Minimal ZFS system |
 
-## Module System Architecture
+## Customization
 
-### Design Principles
+### Basic Configuration
 
-1. **Separation of Concerns** - Each module handles one specific aspect
-2. **Composability** - Modules can be mixed and matched freely
-3. **Override Capability** - Any setting can be overridden at the host level
-4. **Smart Defaults** - Sensible defaults that work for most cases
-5. **Progressive Disclosure** - Simple to use, powerful when needed
-
-### Module Types
-
-#### Core Modules
-Always loaded, provide essential functionality:
-- **base** - Fundamental NixOS settings
-- **nix-settings** - Nix daemon configuration
-- **boot** - Bootloader and kernel settings
-
-#### Feature Modules
-Optional modules that add specific functionality:
-```nix
-{
-  options.feature.name = {
-    enable = mkEnableOption "description";
-    # Additional options
-  };
-  
-  config = mkIf cfg.enable {
-    # Implementation
-  };
-}
-```
-
-#### Profile Modules
-High-level modules that enable multiple features:
-```nix
-{
-  config = mkIf cfg.profiles.workstation.enable {
-    # Enable multiple features
-    desktop.kde.enable = true;
-    storage.zfs.enable = true;
-    services.printing.enable = true;
-  };
-}
-```
-
-### Using Modules
-
-Enable modules in your host configuration:
+Edit `flake.nix` to customize your setup:
 
 ```nix
-# hosts/myhost/default.nix
-{ config, lib, pkgs, ... }:
-
-{
-  # Enable ZFS with custom settings
-  storage.zfs = {
-    enable = true;
-    arcSize.max = 16884901888; # 16GB
-    optimizeForNvme = true;
-  };
-
-  # Enable KDE desktop
-  desktop.kde.enable = true;
-
-  # Enable specific profiles
-  profiles.gaming.enable = true;
-  profiles.development.enable = true;
-}
-```
-
-## Usage Guide
-
-### Initial Setup
-
-#### Fresh Installation
-
-1. Prepare installation media:
-```bash
-# Download NixOS ISO
-wget https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso
-
-# Write to USB
-sudo dd if=latest-nixos-minimal-x86_64-linux.iso of=/dev/sdX bs=4M status=progress
-```
-
-2. Install NixOS:
-```bash
-# Generate hardware configuration
-nixos-generate-config --root /mnt
-
-# Clone this repository
-git clone https://github.com/anthonymoon/zenixv2.git /mnt/etc/nixos
-
-# Install
-nixos-install --flake /mnt/etc/nixos#myhost
-```
-
-### Daily Operations
-
-#### System Updates
-```bash
-# Update everything
-nix flake update
-sudo nixos-rebuild switch --flake .#$(hostname)
-
-# Update specific input
-nix flake lock --update-input nixpkgs
-```
-
-#### Package Management
-```bash
-# Temporary usage
-nix run nixpkgs#htop
-
-# Add to system
-# Edit hosts/myhost/default.nix
-environment.systemPackages = with pkgs; [
-  firefox
-  thunderbird
-];
-```
-
-### Common Workflows
-
-#### Adding a New Host
-
-1. Create host directory:
-```bash
-mkdir -p hosts/newhost
-```
-
-2. Create configuration:
-```nix
-# hosts/newhost/default.nix
-{ config, lib, pkgs, ... }:
-{
-  imports = [ ./hardware-configuration.nix ];
-  
-  # Your configuration
-  storage.zfs.enable = true;
-  desktop.hyprland.enable = true;
-}
-```
-
-3. Add to flake.nix:
-```nix
-nixosConfigurations.newhost = lib.mkSystem {
-  hostname = "newhost";
-  modules = [ ./hosts/newhost ];
+workstation = mkSystem {
+  hostname = "my-pc";
+  username = "myname";
+  fullName = "My Full Name";
+  email = "my.email@example.com";
+  theme = "tokyo-night";  # or kanagawa, everforest, catppuccin, etc.
 };
 ```
 
-## System Profiles
+### Available Themes
 
-### Base Profiles
+- `tokyo-night` (default)
+- `kanagawa`
+- `everforest`
+- `catppuccin`
+- `nord`
+- `gruvbox`
+- `gruvbox-light`
+- `generated_light` - Extract from wallpaper
+- `generated_dark` - Extract from wallpaper
 
-#### minimal
-- Absolute minimum viable NixOS system
-- Core utilities, SSH, basic networking
-- ~200MB RAM, ~2GB disk
+### Custom Wallpaper
 
-#### workstation
-- Full-featured desktop system with Hyprland
-- Office apps, browsers, media players
-- Modern Wayland compositor with tiling
-
-#### server
-- Headless server configuration
-- Enhanced security, monitoring tools
-- Network optimization
-
-### Specialized Profiles
-
-#### development
-- Multiple language toolchains
-- Version control, database clients
-- Container tools, IDEs
-
-#### gaming
-- Gaming platforms (Steam, etc.)
-- 32-bit graphics libraries
-- Low-latency kernel
-
-#### hardened
-- Maximum security configuration
-- Kernel hardening, AppArmor/SELinux
-- Audit logging, encrypted storage
-
-### Profile Combinations
+To use a custom wallpaper with any theme:
 
 ```nix
-# Developer workstation
 {
-  profiles.workstation.enable = true;
-  profiles.development.enable = true;
-  desktop.hyprland.enable = true;
-}
-
-# Secure server
-{
-  profiles.server.enable = true;
-  profiles.hardened.enable = true;
-  storage.zfs.enable = true;
+  omarchy = {
+    theme = "tokyo-night";
+    theme_overrides = {
+      wallpaper_path = ./wallpapers/my-wallpaper.png;
+    };
+  };
 }
 ```
 
-## API Reference
+## What's Included
 
-### Core Functions
+### Base System (via omarchy-nix)
+- **Hyprland** - Tiling Wayland compositor
+- **Waybar** - Status bar
+- **Wofi** - Application launcher
+- **Kitty** - Terminal emulator
+- **VSCode** - Code editor
+- **1Password** - Password manager
+- **Brave** - Web browser
+- **And more...**
 
-#### mkSystem
-Creates a complete NixOS system configuration.
+### Additional Features
+- **ZFS** - Advanced filesystem
+- **AMD GPU drivers** - Full Wayland support
+- **NetworkManager** - Easy network configuration
+- **Pipewire** - Modern audio stack
 
-```nix
-lib.mkSystem {
-  hostname = "myserver";
-  system = "x86_64-linux";
-  modules = [
-    ./hosts/myserver
-    ./modules/profiles/server
-  ];
-}
+## Post-Installation
+
+### Change Password
+```bash
+passwd
 ```
 
-### Hardware Detection
-
-#### hardware.detectCPU
-Returns: "intel" | "amd" | "generic"
-
-#### hardware.detectGPU
-Returns: "nvidia" | "amd" | "intel" | "none"
-
-#### hardware.detectPlatform
-Returns: "system76" | "dell" | "lenovo" | "asus" | "apple" | "generic"
-
-### Helper Functions
-
-#### helpers.mkHostId
-Generates ZFS-compatible host ID from hostname.
-
-#### helpers.formatBytes
-Formats byte count to human-readable string.
-
-### Module Builders
-
-#### builders.mkServiceModule
-Creates standardized service module.
-
-#### builders.mkProgramModule
-Creates standardized program module.
-
-## Migration Guide
-
-### From Existing NixOS
-
-1. Backup current configuration:
+### Update System
 ```bash
-sudo cp -r /etc/nixos /etc/nixos.backup
+sudo nixos-rebuild switch --flake /etc/nixos#workstation
 ```
 
-2. Clone unified configuration:
+### Enter Development Shell
 ```bash
-cd /etc/nixos
-sudo git clone https://github.com/anthonymoon/zenixv2.git .
-```
-
-3. Create host configuration:
-```bash
-sudo mkdir -p hosts/$(hostname)
-sudo cp /etc/nixos.backup/hardware-configuration.nix hosts/$(hostname)/
-```
-
-4. Test and switch:
-```bash
-sudo nixos-rebuild build --flake .#$(hostname)
-sudo nixos-rebuild switch --flake .#$(hostname)
-```
-
-### From Multiple Projects
-
-If migrating from multiple separate NixOS projects:
-
-1. Identify common patterns
-2. Map to unified modules
-3. Test each configuration
-4. Gradually migrate systems
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `nix flake check`
-5. Submit a pull request
-
-### Code Style
-
-- Use `nixfmt-rfc-style` for formatting (available in dev shell)
-- Follow existing module patterns
-- Document all options
-- Add tests for complex features
-
-### Development Workflow
-
-```bash
-# Enter the dev shell for all tools
 nix develop
-
-# Or run commands directly with dev shell
-nix develop -c git commit -m "your message"
-
-# Or use the helper script
-./scripts/git-commit.sh -m "your message"
 ```
+
+## System Requirements
+
+- UEFI boot mode
+- AMD GPU (recommended)
+- NVMe SSD at `/dev/nvme0n1`
+- 8GB+ RAM for ZFS
+
+## Credits
+
+Based on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) by Henry Sipp, which implements DHH's [Omarchy](https://omakub.org/) for NixOS.
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Acknowledgments
-
-- NixOS community for excellent documentation
-- Module patterns inspired by various community configurations
-- Hardware detection logic adapted from nixos-hardware project
+MIT
