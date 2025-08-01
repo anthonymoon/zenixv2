@@ -25,8 +25,7 @@
     dedicatedServer.openFirewall = true;
   };
 
-  # Enable gamemode
-  programs.gamemode.enable = true;
+  # Gamemode is configured in performance module
 
   # System packages
   environment.systemPackages = with pkgs; [
@@ -155,7 +154,7 @@
     nerd-fonts.fira-code
     nerd-fonts.droid-sans-mono
     nerd-fonts.jetbrains-mono
-    
+
     # Powerlevel10k for zsh
     zsh-powerlevel10k
 

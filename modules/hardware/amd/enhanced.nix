@@ -188,8 +188,7 @@
     sysbench # System benchmark
   ];
 
-  # Enable AMD P-state driver
-  powerManagement.cpuFreqGovernor = "performance";
+  # AMD P-state driver is configured in performance module
 
   # Udev rules for AMD GPU
   services.udev.packages = with pkgs; [
@@ -223,7 +222,7 @@
   programs.corectrl = {
     enable = true;
   };
-  
+
   # Enable AMD GPU overclocking
   hardware.amdgpu.overdrive = {
     enable = true;

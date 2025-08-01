@@ -49,8 +49,10 @@
 
           # Common modules
           ./modules/common
+          ./modules/common/performance.nix
           ./modules/storage/zfs
           ./modules/hardware/amd/enhanced.nix
+          ./modules/hardware/ntsync
           ./modules/networking/bonding
           ./modules/networking/performance
           ./modules/services/samba
@@ -109,7 +111,6 @@
             # Basic services - using systemd-networkd instead of NetworkManager
             networking.useNetworkd = true;
             systemd.network.enable = true;
-            services.resolved.enable = true;
             
             # Timezone and NTP
             time.timeZone = "America/Vancouver";
@@ -132,7 +133,22 @@
             
             # Enable mDNS
             services.avahi.nssmdns4 = true;
-            networking.nameservers = [ "8.8.8.8" "8.8.4.4" ];
+            
+            # Use AdGuard DNS with DNS-over-QUIC
+            services.resolved = {
+              enable = true;
+              dnssec = "true";
+              domains = [ "~." ];
+              fallbackDns = [ "1.1.1.1" "8.8.8.8" ];
+              # AdGuard DNS servers
+              extraConfig = ''
+                DNS=94.140.14.14 94.140.15.15 2a10:50c0::ad1:ff 2a10:50c0::ad2:ff
+                DNSOverTLS=yes
+              '';
+            };
+            
+            # Note: DNS-over-QUIC requires additional configuration
+            # systemd-resolved doesn't support DoQ directly yet
 
             # System state version
             system.stateVersion = "24.11";

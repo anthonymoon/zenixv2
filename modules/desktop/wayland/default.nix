@@ -10,7 +10,7 @@
 {
   # Enable Wayland support
   programs.xwayland.enable = true;
-  
+
   # Common Wayland environment
   environment.sessionVariables = {
     # Wayland-specific
@@ -20,12 +20,12 @@
     GDK_BACKEND = "wayland,x11";
     SDL_VIDEODRIVER = "wayland";
     CLUTTER_BACKEND = "wayland";
-    
+
     # XDG
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "Hyprland";
-    
+
     # QT Theme
     QT_AUTO_SCREEN_SCALE_FACTOR = "1";
     QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
@@ -39,16 +39,16 @@
 
   # Ensure proper permissions for Wayland
   security.polkit.enable = true;
-  
+
   # Enable Hyprland (via omarchy-nix)
   # This is already handled by omarchy-nix
-  
+
   # Enable Niri as an alternative compositor
   programs.niri = {
     enable = true;
     package = pkgs.niri;
   };
-  
+
   # Common Wayland utilities
   environment.systemPackages = with pkgs; [
     # Wayland tools
@@ -56,45 +56,45 @@
     wayland-protocols
     wayland-utils
     wlroots
-    
+
     # Screenshot/screen recording
     grim
     slurp
     wf-recorder
-    
+
     # Clipboard
     wl-clipboard
     cliphist
-    
+
     # Display management
     wlr-randr
     kanshi
-    
+
     # Idle/lock
     swayidle
     swaylock
-    
+
     # Notification daemon (if not provided by omarchy)
     mako
-    
+
     # Application launcher (if not provided by omarchy)
     fuzzel
     tofi
-    
+
     # Terminal (additional to kitty/ghostty)
     foot
-    
+
     # File manager
     pcmanfm-qt
-    
+
     # Polkit agent
     polkit_gnome
-    
+
     # XDG desktop portal
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
   ];
-  
+
   # XDG portal configuration
   xdg.portal = {
     enable = true;
@@ -105,28 +105,34 @@
     ];
     config = {
       common = {
-        default = [ "hyprland" "gtk" ];
+        default = [
+          "hyprland"
+          "gtk"
+        ];
       };
       hyprland = {
-        default = [ "hyprland" "gtk" ];
+        default = [
+          "hyprland"
+          "gtk"
+        ];
       };
     };
   };
-  
+
   # D-Bus for Wayland
   services.dbus = {
     enable = true;
-    packages = with pkgs; [ 
-      dconf 
-      gcr 
-      gnome-keyring 
+    packages = with pkgs; [
+      dconf
+      gcr
+      gnome-keyring
     ];
   };
-  
+
   # Enable gnome-keyring for authentication dialogs
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.greetd.enableGnomeKeyring = true;
-  
+
   # Fonts for Wayland
   fonts = {
     enableDefaultPackages = true;
@@ -143,12 +149,15 @@
       defaultFonts = {
         serif = [ "Noto Serif" ];
         sansSerif = [ "Noto Sans" ];
-        monospace = [ "JetBrains Mono" "Source Code Pro" ];
+        monospace = [
+          "JetBrains Mono"
+          "Source Code Pro"
+        ];
         emoji = [ "Noto Color Emoji" ];
       };
     };
   };
-  
+
   # Create Niri config directory
   system.activationScripts.niriConfig = ''
     mkdir -p /etc/niri
@@ -167,7 +176,7 @@
             accel-speed 0.2
         }
     }
-    
+
     outputs {
         // Configure your displays here
         // Example: "DP-1" {
@@ -175,7 +184,7 @@
         //     scale 1
         // }
     }
-    
+
     layout {
         gaps 16
         center-focused-column "never"
@@ -200,17 +209,17 @@
             inactive-color "#505050"
         }
     }
-    
+
     spawn-at-startup "systemctl" "--user" "start" "graphical-session.target"
-    
+
     prefer-no-csd
-    
+
     screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
-    
+
     hotkey-overlay {
         skip-at-startup
     }
-    
+
     binds {
         // Mod-Shift-Slash to show help
         Mod+Shift+Slash { show-hotkey-overlay; }

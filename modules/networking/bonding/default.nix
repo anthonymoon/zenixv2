@@ -36,7 +36,7 @@
   # Configure systemd-networkd for bond0
   systemd.network = {
     enable = true;
-    
+
     # Configure the physical interfaces as bond slaves
     networks = {
       "10-bond-slave-enp4s0f0np0" = {
@@ -47,7 +47,7 @@
           IPv6AcceptRA = false;
         };
       };
-      
+
       "10-bond-slave-enp4s0f1np1" = {
         matchConfig.Name = "enp4s0f1np1";
         networkConfig = {
@@ -78,7 +78,7 @@
         };
       };
     };
-    
+
     # Configure the physical interfaces
     links = {
       "10-enp4s0f0np0" = {
@@ -88,7 +88,7 @@
           WakeOnLan = "magic";
         };
       };
-      
+
       "10-enp4s0f1np1" = {
         matchConfig.Name = "enp4s0f1np1";
         linkConfig = {
