@@ -56,8 +56,8 @@
         ./modules/storage/zfs
         ./modules/hardware/amd/enhanced.nix
         ./modules/hardware/ntsync
-        # ./modules/networking/bonding  # Removed - using DHCP instead
-        ./modules/networking/intel-x710.nix  # Intel X710 with DHCP
+        ./modules/networking/bonding  # LACP bond0 for dual 10GbE
+        # ./modules/networking/intel-x710.nix  # Single interface mode (disabled)
         ./modules/networking/performance
         ./modules/services/samba
         ./modules/extras/pkgs
@@ -118,6 +118,15 @@
           # Basic services - using systemd-networkd instead of NetworkManager
           networking.useNetworkd = true;
           systemd.network.enable = true;
+
+          # Configure bonding (uncomment for static IP)
+          # networking.bonding = {
+          #   interfaces = [ "enp4s0f0np0" "enp4s0f1np1" ];
+          #   macAddress = "52:54:00:12:34:56";
+          #   mtu = 9000;
+          #   staticIP = "10.10.10.11/24";
+          #   gateway = "10.10.10.1";
+          # };
 
           # Timezone and NTP
           time.timeZone = "America/Vancouver";
