@@ -52,14 +52,19 @@
         # Common modules
         ./modules/common
         ./modules/common/performance.nix
+        ./modules/common/user-config.nix
         ./modules/storage/zfs
         ./modules/hardware/amd/enhanced.nix
         ./modules/hardware/ntsync
-        ./modules/networking/bonding
+        # ./modules/networking/bonding  # Removed - using DHCP instead
+        ./modules/networking/intel-x710.nix  # Intel X710 with DHCP
         ./modules/networking/performance
         ./modules/services/samba
         ./modules/extras/pkgs
         ./modules/desktop/wayland
+        ./modules/desktop/hyprland-bulletproof
+        ./modules/desktop/sddm
+        ./modules/security/hardening  # Enable basic security hardening
 
         # Omarchy modules
         omarchy-nix.nixosModules.default
@@ -69,7 +74,31 @@
         {
           networking.hostName = "nixie";
 
-          # Configure omarchy
+          # User configuration using the new module
+          zenix.user = {
+            username = "amoon";
+            fullName = "Anthony Moon";
+            email = "tonymoon@gmail.com";
+            initialPassword = "nixos";  # Change this!
+            extraGroups = [
+              "wheel"
+              "audio"
+              "video"
+              "networkmanager"
+              "docker"
+            ];
+            sudoTimeout = 15;
+            passwordlessSudo = false;  # Secure by default
+            # Add your SSH public keys here for better security
+            # authorizedKeys = [ "ssh-rsa AAAAB3..." ];
+          };
+
+          # Root user configuration
+          users.users.root = {
+            initialPassword = "nixos";  # Same as regular user for convenience
+          };
+
+          # Configure omarchy with user settings
           omarchy = {
             full_name = "Anthony Moon";
             email_address = "tonymoon@gmail.com";
@@ -86,30 +115,6 @@
             };
           };
 
-          # User configuration
-          users.users.amoon = {
-            isNormalUser = true;
-            extraGroups = [
-              "wheel"
-              "audio"
-              "video"
-            ];
-            initialPassword = "nixos";
-          };
-
-          # Enable passwordless sudo
-          security.sudo.extraRules = [
-            {
-              users = ["amoon"];
-              commands = [
-                {
-                  command = "ALL";
-                  options = ["NOPASSWD"];
-                }
-              ];
-            }
-          ];
-
           # Basic services - using systemd-networkd instead of NetworkManager
           networking.useNetworkd = true;
           systemd.network.enable = true;
@@ -121,17 +126,34 @@
             servers = ["time.google.com"];
           };
 
-          # SSH configuration
+          # SSH configuration - Password auth enabled
           services.openssh = {
             enable = true;
             settings = {
-              PermitRootLogin = "yes";
-              PasswordAuthentication = true;
+              PermitRootLogin = "yes";  # Allow root login with password
+              PasswordAuthentication = true;  # Allow password authentication
+              KbdInteractiveAuthentication = true;
+              ChallengeResponseAuthentication = false;
+              UsePAM = true;
             };
           };
 
-          # Disable firewall
-          networking.firewall.enable = false;
+          # Enable firewall with specific ports
+          networking.firewall = {
+            enable = true;
+            allowedTCPPorts = [ 
+              22    # SSH
+              445   # SMB
+              139   # SMB
+              5357  # WSDD
+            ];
+            allowedUDPPorts = [ 
+              137   # NetBIOS
+              138   # NetBIOS
+              5353  # mDNS
+              3702  # WSDD
+            ];
+          };
 
           # Enable mDNS
           services.avahi.nssmdns4 = true;

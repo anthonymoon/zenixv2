@@ -69,8 +69,9 @@
 
     # Networking
     networking = {
-      # Enable NetworkManager by default
-      networkmanager.enable = lib.mkDefault true;
+      # NetworkManager is enabled by default, but can be overridden
+      # Set networking.useNetworkd = true to use systemd-networkd instead
+      networkmanager.enable = lib.mkDefault (!config.networking.useNetworkd);
 
       # Firewall
       firewall = {
@@ -78,7 +79,7 @@
         allowPing = lib.mkDefault true;
       };
 
-      # Use systemd-resolved
+      # DNS servers (can be overridden by systemd-resolved or NetworkManager)
       nameservers = lib.mkDefault [
         "1.1.1.1"
         "8.8.8.8"
@@ -170,5 +171,13 @@
 
     # System state version
     system.stateVersion = lib.mkDefault "24.11";
+
+    # Assertions to catch common configuration issues
+    assertions = [
+      {
+        assertion = !(config.networking.useNetworkd && config.networking.networkmanager.enable);
+        message = "Cannot enable both systemd-networkd and NetworkManager. Choose one by setting either networking.useNetworkd or networking.networkmanager.enable.";
+      }
+    ];
   };
 }

@@ -77,26 +77,59 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = "${pkgs.writeShellScript "enable-msr" ''
-        # Load MSR module
-        ${pkgs.kmod}/bin/modprobe msr
+        #!/usr/bin/env bash
+        set -euo pipefail
 
-        # Set permissions for MSR access
-        chmod 666 /dev/cpu/*/msr || true
+        echo "Configuring MSR access for overclocking..."
+
+        # Load MSR module
+        if ${pkgs.kmod}/bin/modprobe msr; then
+          echo "✓ MSR module loaded"
+        else
+          echo "✗ Failed to load MSR module"
+          exit 1
+        fi
 
         # Create msr group if it doesn't exist
-        ${pkgs.shadow}/bin/groupadd -f msr
+        if ${pkgs.shadow}/bin/groupadd -f msr; then
+          echo "✓ MSR group created/exists"
+        else
+          echo "✗ Failed to create MSR group"
+        fi
 
-        # Set group ownership
-        chown root:msr /dev/cpu/*/msr || true
-        chmod 660 /dev/cpu/*/msr || true
+        # Wait for MSR devices to appear
+        sleep 1
+
+        # Set permissions for MSR access
+        msr_count=0
+        for msr in /dev/cpu/*/msr; do
+          if [[ -e "$msr" ]]; then
+            if chown root:msr "$msr" && chmod 660 "$msr"; then
+              ((msr_count++))
+            else
+              echo "⚠ Failed to set permissions on $msr"
+            fi
+          fi
+        done
+
+        if [[ $msr_count -gt 0 ]]; then
+          echo "✓ Set permissions on $msr_count MSR devices"
+        else
+          echo "⚠ No MSR devices found - this is normal if running in a VM"
+        fi
+
+        echo "MSR configuration completed"
       ''}";
     };
   };
 
   # Add user to msr group for overclocking access
   users.groups.msr = {};
-  users.users.amoon = {
-    extraGroups = [
+  
+  # Add hardware-specific groups to the configured user
+  # This uses mkIf to only apply when a user is configured
+  users.users = lib.mkIf (config.zenix.user.username or null != null) {
+    ${config.zenix.user.username}.extraGroups = [
       "msr"
       "video"
       "render"
@@ -233,9 +266,9 @@
       name = "amd-performance";
       patch = null;
       extraStructuredConfig = with lib.kernel; {
-        PREEMPT = yes;
+        PREEMPT = lib.mkForce yes;
         PREEMPT_VOLUNTARY = lib.mkForce no;
-        HZ_1000 = yes;
+        HZ_1000 = lib.mkForce yes;
         HZ = lib.mkForce (freeform "1000");
       };
     }
@@ -258,23 +291,52 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = "${pkgs.writeShellScript "amd-performance" ''
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # Function to safely write to sysfs
+        safe_write() {
+          local value="$1"
+          local file="$2"
+          if [[ -w "$file" ]]; then
+            echo "$value" > "$file" && echo "✓ Set $file to $value" || echo "✗ Failed to set $file"
+          else
+            echo "⚠ $file not writable or doesn't exist"
+          fi
+        }
+
+        echo "Starting AMD performance optimizations..."
+
         # Set GPU to high performance mode
-        echo "high" > /sys/class/drm/card*/device/power_dpm_force_performance_level 2>/dev/null || true
+        for card in /sys/class/drm/card*/device/power_dpm_force_performance_level; do
+          [[ -e "$card" ]] && safe_write "high" "$card"
+        done
 
         # Set compute mode for better performance
-        echo "1" > /sys/class/drm/card*/device/pp_power_profile_mode 2>/dev/null || true
+        for card in /sys/class/drm/card*/device/pp_power_profile_mode; do
+          [[ -e "$card" ]] && safe_write "1" "$card"
+        done
 
         # CPU performance settings
-        ${pkgs.linuxPackages.cpupower}/bin/cpupower frequency-set -g performance || true
+        if command -v cpupower &> /dev/null; then
+          ${pkgs.linuxPackages.cpupower}/bin/cpupower frequency-set -g performance && \
+            echo "✓ Set CPU governor to performance" || \
+            echo "✗ Failed to set CPU governor"
+        else
+          echo "⚠ cpupower not found"
+        fi
 
         # Enable turbo boost
-        echo "0" > /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || true
-        echo "1" > /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || true
+        if [[ -e /sys/devices/system/cpu/cpufreq/boost ]]; then
+          safe_write "1" "/sys/devices/system/cpu/cpufreq/boost"
+        fi
 
         # Set CPU to maximum performance
         for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-          echo "performance" > $cpu 2>/dev/null || true
+          [[ -e "$cpu" ]] && safe_write "performance" "$cpu"
         done
+
+        echo "AMD performance optimizations completed"
       ''}";
     };
   };

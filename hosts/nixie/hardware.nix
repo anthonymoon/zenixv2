@@ -23,6 +23,20 @@
   boot.initrd.kernelModules = ["zfs"];
   boot.kernelModules = ["kvm-amd"];
   boot.extraModulePackages = [];
+  
+  # Suppress kernel printk warnings
+  boot.kernelParams = [
+    "quiet"
+    "loglevel=3"  # Only show critical messages
+    "rd.systemd.show_status=false"
+    "rd.udev.log_level=3"
+    "udev.log_priority=3"
+  ];
+  
+  # Set console log level after boot
+  boot.kernel.sysctl = {
+    "kernel.printk" = "3 3 3 3";  # Suppress most kernel messages
+  };
 
   # ZFS-specific settings
   boot.supportedFilesystems = ["zfs"];

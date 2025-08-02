@@ -1,6 +1,6 @@
 # ZenixV2 - High-Performance NixOS Configuration
 
-A modern NixOS configuration framework featuring ZFS, AMD GPU optimization, and 20Gbps networking. Built on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) for a streamlined Hyprland desktop experience.
+A modern NixOS configuration framework featuring ZFS, AMD GPU optimization, and high-performance networking. Built on [omarchy-nix](https://github.com/henrysipp/omarchy-nix) for a streamlined Hyprland desktop experience.
 
 ## 🚀 Quick Start
 
@@ -22,7 +22,7 @@ sudo nixos-install --flake .#nixie
 - **GPU**: AMD GPU with RDNA2/3 (7800 XT tested)
 - **RAM**: 8GB minimum, 16GB+ recommended for ZFS
 - **Storage**: NVMe SSD at `/dev/nvme0n1`
-- **Network**: Optional dual 10GbE for bonding
+- **Network**: Intel X710 10GbE with hardware offloading
 
 ## 🎯 Key Features
 
@@ -37,7 +37,7 @@ sudo nixos-install --flake .#nixie
 - **GPU**: Full Vulkan, ROCm, and overclocking support
 - **CPU**: Zenpower monitoring, P-state control
 - **Gaming**: GameMode, MangoHud, low-latency audio
-- **Network**: 20Gbps bonding with TCP BBR
+- **Network**: Intel X710 10GbE with optimizations
 - **Audio**: PipeWire with 64-sample buffer (1.3ms)
 
 ### Desktop - Hyprland via Omarchy
@@ -85,7 +85,7 @@ modules = [
   # ./modules/hardware/intel              # Intel CPU/GPU
   # ./modules/hardware/nvidia             # Nvidia GPU
   ./modules/storage/zfs                  # ZFS filesystem
-  ./modules/networking/bonding           # Network bonding
+  ./modules/networking/intel-x710        # Intel X710 10GbE
   ./modules/networking/performance       # TCP optimization
 ];
 ```
@@ -147,7 +147,7 @@ amdgpu_top
 btop
 
 # Network performance
-iftop -i bond0
+iftop
 
 # ZFS ARC stats
 arc_summary

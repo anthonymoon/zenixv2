@@ -4,16 +4,47 @@
   lib,
   pkgs,
   ...
-}: {
+}: let
+  cfg = config.networking.performance;
+  # Helper to check if a value is a power of 2
+  isPowerOf2 = n: n != 0 && (builtins.bitAnd n (n - 1)) == 0;
+in {
+  options.networking.performance = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable network performance optimizations";
+    };
+
+    targetBandwidth = lib.mkOption {
+      type = lib.types.str;
+      default = "20Gbps";
+      description = "Target network bandwidth for optimizations";
+    };
+
+    enableBBR = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable TCP BBR congestion control";
+    };
+
+    bufferSize = lib.mkOption {
+      type = lib.types.int;
+      default = 134217728; # 128MB
+      description = "Network buffer size in bytes";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
   # Kernel parameters optimized for 20Gbps networking
   boot.kernel.sysctl = {
     # Core network settings
     "net.core.netdev_max_backlog" = 5000;
-    "net.core.rmem_max" = 134217728; # 128MB
-    "net.core.wmem_max" = 134217728; # 128MB
-    "net.core.rmem_default" = 67108864; # 64MB
-    "net.core.wmem_default" = 67108864; # 64MB
-    "net.core.optmem_max" = 134217728; # 128MB
+    "net.core.rmem_max" = cfg.bufferSize;
+    "net.core.wmem_max" = cfg.bufferSize;
+    "net.core.rmem_default" = cfg.bufferSize / 2;
+    "net.core.wmem_default" = cfg.bufferSize / 2;
+    "net.core.optmem_max" = cfg.bufferSize;
 
     # Enable receive packet steering
     "net.core.rps_sock_flow_entries" = 32768;
@@ -81,20 +112,10 @@
       # Set CPU affinity for network interrupts
       # This spreads interrupts across all CPU cores
 
-      # Enable RPS (Receive Packet Steering) for bond0
-      echo ffff > /sys/class/net/bond0/queues/rx-0/rps_cpus 2>/dev/null || true
-
       # Enable RFS (Receive Flow Steering)
       echo 32768 > /proc/sys/net/core/rps_sock_flow_entries
 
-      # Set ring buffer sizes for Intel i40e
-      for iface in enp4s0f0np0 enp4s0f1np1; do
-        if [ -d "/sys/class/net/$iface" ]; then
-          ${pkgs.ethtool}/bin/ethtool -G $iface rx 4096 tx 4096 2>/dev/null || true
-          ${pkgs.ethtool}/bin/ethtool -K $iface rx-checksumming on tx-checksumming on sg on tso on gso on gro on lro on 2>/dev/null || true
-          ${pkgs.ethtool}/bin/ethtool -C $iface rx-usecs 10 tx-usecs 10 2>/dev/null || true
-        fi
-      done
+      # Network tuning is now handled by intel-x710 module
     '';
     serviceConfig = {
       Type = "oneshot";
@@ -111,4 +132,21 @@
     nethogs
     bmon
   ];
+
+  # Assertions
+  assertions = [
+    {
+      assertion = cfg.bufferSize >= 67108864; # 64MB minimum
+      message = "Network buffer size should be at least 64MB for high-performance networking";
+    }
+    {
+      assertion = cfg.bufferSize <= 2147483648; # 2GB maximum
+      message = "Network buffer size should not exceed 2GB to avoid memory issues";
+    }
+    {
+      assertion = isPowerOf2 cfg.bufferSize;
+      message = "Network buffer size should be a power of 2 for optimal performance";
+    }
+  ];
+  };
 }

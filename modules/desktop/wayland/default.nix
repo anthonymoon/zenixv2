@@ -6,6 +6,10 @@
   inputs,
   ...
 }: {
+  imports = [
+    ./hyprland-fixes.nix
+    ./hyprland-config.nix
+  ];
   # Enable Wayland support
   programs.xwayland.enable = true;
 
