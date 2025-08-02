@@ -188,6 +188,15 @@
       ];
     };
 
+    # Alternative configuration without enhanced AMD module (for troubleshooting)
+    nixosConfigurations.nixie-basic = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/nixie/configuration-minimal.nix
+      ];
+    };
+
     # Disko formatting app
     apps.x86_64-linux.format-nixie = {
       type = "app";
