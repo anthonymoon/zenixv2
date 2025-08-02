@@ -62,8 +62,8 @@
         ./modules/services/samba
         ./modules/extras/pkgs
         ./modules/desktop/wayland
-        ./modules/desktop/hyprland-bulletproof
-        ./modules/desktop/sddm
+        ./modules/desktop/hyprland-bulletproof.nix
+        ./modules/desktop/sddm.nix
         ./modules/security/hardening  # Enable basic security hardening
 
         # Omarchy modules
