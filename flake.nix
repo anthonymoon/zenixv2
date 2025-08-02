@@ -150,6 +150,7 @@
           # Enable firewall with specific ports
           networking.firewall = {
             enable = true;
+            allowPing = lib.mkForce true;  # Override hardening module
             allowedTCPPorts = [ 
               22    # SSH
               445   # SMB

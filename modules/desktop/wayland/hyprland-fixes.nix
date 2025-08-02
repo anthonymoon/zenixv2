@@ -186,7 +186,7 @@
       amdvlk
       rocmPackages.clr.icd
       mesa
-      mesa.drivers
+      # mesa.drivers is deprecated, mesa includes drivers now
       vulkan-loader
       vulkan-validation-layers
       vulkan-extension-layer
@@ -196,7 +196,7 @@
     extraPackages32 = with pkgs.pkgsi686Linux; [
       amdvlk
       mesa
-      mesa.drivers
+      # mesa.drivers is deprecated, mesa includes drivers now
     ];
   };
 
