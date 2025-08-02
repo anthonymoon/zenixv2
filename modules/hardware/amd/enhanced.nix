@@ -261,18 +261,20 @@
   };
 
   # AMD specific kernel configuration
-  boot.kernelPatches = [
-    {
-      name = "amd-performance";
-      patch = null;
-      extraStructuredConfig = with lib.kernel; {
-        PREEMPT = lib.mkForce yes;
-        PREEMPT_VOLUNTARY = lib.mkForce no;
-        HZ_1000 = lib.mkForce yes;
-        HZ = lib.mkForce (freeform "1000");
-      };
-    }
-  ];
+  # NOTE: Commented out due to conflicts with NixOS kernel defaults
+  # These optimizations require a custom kernel build
+  # boot.kernelPatches = [
+  #   {
+  #     name = "amd-performance";
+  #     patch = null;
+  #     extraStructuredConfig = with lib.kernel; {
+  #       PREEMPT = lib.mkForce yes;
+  #       PREEMPT_VOLUNTARY = lib.mkForce no;
+  #       HZ_1000 = lib.mkForce yes;
+  #       HZ = lib.mkForce (freeform "1000");
+  #     };
+  #   }
+  # ];
 
   # Enable zenpower kernel module for enhanced Ryzen monitoring
   boot.extraModulePackages = with config.boot.kernelPackages; [
